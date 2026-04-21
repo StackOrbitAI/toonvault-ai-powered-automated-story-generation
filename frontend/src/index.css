@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600&family=Outfit:wght@300;500;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Royal Sakura Palette */
+  --midnight: #2D004B;
+  --plum-dark: #1F0035;
+  --sakura-pearl: #FFF0F5;
+  --sakura-glow: #FFB7C5;
+  --gold-foil: #D4AF37;
+  --gold-glow: #FFD700;
+  --glass: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  
+  --font-display: 'Crimson Pro', serif;
+  --font-ui: 'Outfit', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--plum-dark);
+  color: var(--sakura-pearl);
+  font-family: var(--font-ui);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+}
+
+.glass-morphism {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--plum-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sakura-glow);
+  border-radius: 10px;
+}
