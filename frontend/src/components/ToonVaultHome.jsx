@@ -331,7 +331,7 @@ export default function ToonVaultHome() {
               { label: "Categories", target: "#categories" },
               { label: "Rankings", target: "#rankings" },
               { label: "Canvas", target: "#collections" },
-              { label: "Pricing", path: "/pricing" },
+              { label: "Pricing", target: "#pricing" },
               { label: "Creators 101", target: "#creators" }
             ].map(item => (
               <button key={item.label} onClick={() => handleNav(item)} style={{
@@ -751,44 +751,64 @@ export default function ToonVaultHome() {
           </div>
         </section>
 
-        {/* ═══ MEMBERSHIP TIERS ═══ */}
-        <section style={{ marginBottom: 44 }}>
-          <SectionHeader title="💎 Membership Plans" sub="Unlock more of ToonVault" />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+        {/* ═══ PREMIUM MEMBERSHIP PLANS ═══ */}
+        <section id="pricing" style={{ marginBottom: 80, scrollMarginTop: 80 }}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <h2 style={{ fontSize: 32, fontWeight: 900, color: COLORS.ink, marginBottom: 12 }}>Choose Your Journey</h2>
+            <p style={{ fontSize: 16, color: COLORS.muted, maxWidth: 500, margin: "0 auto" }}>Unlock unlimited storytelling and support your favorite creators.</p>
+          </div>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
             {[
-              { name: "Bronze", price: "Free", color: "#C08030", bg: "#FEF3E2", desc: "Read & influence stories", perks: ["View all public stories", "Like · Bookmark · Flag", "Choose story paths", "Earn engagement royalties"] },
-              { name: "Silver", price: "$5/yr", color: COLORS.plum, bg: COLORS.plumLight, desc: "Create your own stories", popular: true, perks: ["All Bronze features", "Create public stories", "Generate AI panels", "Community feed access"] },
-              { name: "Gold", price: "$24/yr", color: "#C9922A", bg: "#FEF3DC", desc: "Collaborate like a studio", perks: ["All Silver features", "Create & manage teams", "Private stories", "Creator analytics"] },
-            ].map(tier => (
-              <div key={tier.name} style={{
-                background: tier.bg, borderRadius: 18,
-                border: `2px solid ${tier.popular ? tier.color : COLORS.border}`,
-                padding: "22px 22px 20px", position: "relative",
-              }}>
-                {tier.popular && (
-                  <span style={{
-                    position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)",
-                    background: COLORS.plum, color: "white", fontSize: 10, fontWeight: 700,
-                    padding: "3px 14px", borderRadius: 10, letterSpacing: 0.5,
-                  }}>MOST POPULAR</span>
+              {
+                name: "Free", price: "0", accent: COLORS.muted, bg: "white",
+                features: ["1,000+ free episodes", "Basic customization", "Daily free passes", "Community access"]
+              },
+              {
+                name: "Silver", price: "9.99", accent: COLORS.plum, bg: COLORS.plumLight, popular: true,
+                features: ["Ad-free reading", "Unlimited episodes", "Early access", "Offline reading", "Profile badge"]
+              },
+              {
+                name: "Gold", price: "19.99", accent: COLORS.gold, bg: COLORS.goldLight,
+                features: ["Everything in Silver", "Direct creator support", "Gold-only stories", "Monthly coin bonus", "HD art downloads"]
+              }
+            ].map((plan, i) => (
+              <div key={i} style={{
+                background: plan.bg, borderRadius: 24, padding: "36px 30px",
+                border: `2px solid ${plan.popular ? plan.accent : COLORS.border}`,
+                position: "relative", textAlign: "left", transition: "transform 0.3s",
+                boxShadow: plan.popular ? "0 15px 30px rgba(109,74,232,0.1)" : "none",
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-8px)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+              >
+                {plan.popular && (
+                  <div style={{
+                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
+                    background: plan.accent, color: "white", padding: "4px 16px", borderRadius: 20,
+                    fontSize: 10, fontWeight: 800, textTransform: "uppercase"
+                  }}>Most Popular</div>
                 )}
-                <div style={{ fontSize: 22, fontWeight: 800, color: tier.color, marginBottom: 2 }}>{tier.name}</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: COLORS.ink, margin: "4px 0 2px" }}>{tier.price}</div>
-                <div style={{ fontSize: 13, color: COLORS.muted, marginBottom: 14 }}>{tier.desc}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 18 }}>
-                  {tier.perks.map(p => (
-                    <div key={p} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: COLORS.ink }}>
-                      <span style={{ color: "#2E8B6E", fontWeight: 700 }}>✓</span> {p}
+                <div style={{ fontSize: 22, fontWeight: 800, color: plan.accent, marginBottom: 8 }}>{plan.name}</div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 24 }}>
+                  <span style={{ fontSize: 32, fontWeight: 900 }}>${plan.price}</span>
+                  <span style={{ fontSize: 14, color: COLORS.muted }}>/mo</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+                  {plan.features.map((f, fi) => (
+                    <div key={fi} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: COLORS.ink, fontWeight: 500 }}>
+                      <span style={{ color: plan.accent }}>✓</span> {f}
                     </div>
                   ))}
                 </div>
                 <button style={{
-                  width: "100%", padding: "10px", background: tier.popular ? tier.color : "white",
-                  color: tier.popular ? "white" : tier.color,
-                  border: `1.5px solid ${tier.color}`, borderRadius: 14,
-                  fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  width: "100%", padding: "14px", borderRadius: 14, border: "none",
+                  background: plan.popular ? plan.accent : "white",
+                  color: plan.popular ? "white" : plan.accent,
+                  border: `1.5px solid ${plan.accent}`,
+                  fontSize: 14, fontWeight: 700, cursor: "pointer"
                 }}>
-                  {tier.name === "Bronze" ? "Get started free" : `Upgrade to ${tier.name}`}
+                  {plan.price === "0" ? "Start Free" : "Upgrade Now"}
                 </button>
               </div>
             ))}
@@ -826,10 +846,10 @@ export default function ToonVaultHome() {
                         "Categories": "#categories",
                         "Rankings": "#rankings",
                         "Canvas": "#collections",
+                        "Pricing": "#pricing",
                         "Creators 101": "#creators"
                       };
-                      if (l === "Pricing") navigate("/pricing");
-                      else handleNav({ target: mapping[l] });
+                      handleNav({ target: mapping[l] });
                     }}
                     style={{ fontSize: 13, marginBottom: 9, cursor: "pointer" }}
                     onMouseEnter={e => e.currentTarget.style.color = "white"}
