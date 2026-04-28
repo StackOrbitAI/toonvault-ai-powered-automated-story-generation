@@ -1,5 +1,5 @@
 /* Immersive Backgrounds */
-.reader-container, .login-container, .store-container {
+.reader-container, .login-container, .pricing-container {
   min-height: 100vh;
   padding: 20px;
   position: relative;

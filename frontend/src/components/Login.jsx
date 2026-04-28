@@ -53,14 +53,38 @@ export default function Login({ type = 'user' }) {
 
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
       background: 'linear-gradient(135deg, #1a0a2e 0%, #3D1A5C 50%, #E8336D 100%)',
-      fontFamily: "'Inter', sans-serif", padding: 20
+      fontFamily: "'Inter', sans-serif"
     }}>
       <Helmet>
         <title>{title}</title>
         <meta name="description" content={description} />
       </Helmet>
+
+      {/* Modern Glassmorphism Header */}
+      <header style={{
+        padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)', zIndex: 10
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 12, background: 'linear-gradient(135deg, #8B5CF6, #F43F8E)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+            boxShadow: '0 4px 12px rgba(244, 63, 142, 0.3)'
+          }}>📖</div>
+          <span style={{ fontSize: 20, fontWeight: 800, color: 'white', letterSpacing: -0.5 }}>
+            Toon<span style={{ color: '#F43F8E' }}>Vault</span>
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 20 }}>
+          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Home</button>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
 
       <div style={{
         background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(20px)',
@@ -144,6 +168,22 @@ export default function Login({ type = 'user' }) {
           }}>← Back to ToonVault</button>
         </div>
       </div>
+      </main>
+
+      {/* Footer */}
+      <footer style={{
+        padding: '20px', textAlign: 'center', background: 'rgba(0, 0, 0, 0.2)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginBottom: 12 }}>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>Terms of Service</span>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>Privacy Policy</span>
+          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>Help Center</span>
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
+          &copy; {new Date().getFullYear()} ToonVault. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 }

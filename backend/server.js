@@ -12,6 +12,8 @@ require('dotenv').config();
 const User = require('./models/User');
 const Story = require('./models/Story');
 const Payment = require('./models/Payment');
+const Setting = require('./models/Setting');
+const redis = require('./redisClient');
 
 const app = express();
 const server = http.createServer(app);
@@ -38,6 +40,16 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/stories', require('./routes/stories'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/admin', require('./routes/admin'));
+
+// Public Settings
+app.get('/api/settings/public', async (req, res) => {
+    try {
+        const settings = await Setting.find({ key: { $in: ['show_creator_popup', 'site_name', 'maintenance_mode'] } });
+        const config = {};
+        settings.forEach(s => config[s.key] = s.value);
+        res.json(config);
+    } catch (err) { res.json({}); }
+});
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/toonvault';

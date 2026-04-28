@@ -4,7 +4,6 @@ import { HelmetProvider } from 'react-helmet-async';
 import ToonVaultHome from './components/ToonVaultHome';
 import Reader from './components/Reader';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import Store from './components/Store';
 import Login from './components/Login';
 import ToonVaultUserDashboard from './components/ToonVaultUserDashboard';
 import './App.css';
@@ -44,13 +43,6 @@ function App() {
           <Route path="/login" element={<Navigate to="/user" replace />} />
           <Route path="/admin" element={<Login type="admin" />} />
           
-          {/* User Features */}
-          <Route path="/store" element={
-            <ProtectedRoute>
-              <Store />
-            </ProtectedRoute>
-          } />
-
           {/* Combined Dashboard */}
           <Route path="/dashboard" element={
             <ProtectedRoute>

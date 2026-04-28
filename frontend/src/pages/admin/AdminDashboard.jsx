@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 // ═══════════════════════════════════════════════════════
 //  DESIGN TOKENS
@@ -1104,6 +1106,10 @@ function APIKeysPage({ apiKeys, setApiKeys }) {
   const [saved, setSaved] = useState({});
   const [localKeys, setLocalKeys] = useState({ ...apiKeys });
 
+  useEffect(() => {
+    setLocalKeys({ ...apiKeys });
+  }, [apiKeys]);
+
   const handleSave = (key) => {
     setApiKeys(prev => ({ ...prev, [key]: localKeys[key] }));
     setSaved(prev => ({ ...prev, [key]: true }));
@@ -1131,6 +1137,13 @@ function APIKeysPage({ apiKeys, setApiKeys }) {
       desc: "Generates story cover art and comic panels for creators",
       docsUrl: "https://runware.ai/",
       models: ["runware:100@1 (Turbo)", "runware:101@1 (HD)", "Civitai Models"],
+    },
+    {
+      id: "openrouter", name: "OpenRouter", icon: "O", color: "#3B82F6",
+      label: "OPENROUTER API KEY", placeholder: "sk-or-v1-...",
+      desc: "Universal API to access Claude, Llama, OpenAI, and more for story generation",
+      docsUrl: "https://openrouter.ai/keys",
+      models: ["anthropic/claude-3-opus", "meta-llama/llama-3-70b", "openai/gpt-4-turbo", "google/gemini-1.5-pro"],
     },
   ];
 
@@ -1227,15 +1240,12 @@ function APIKeysPage({ apiKeys, setApiKeys }) {
           color: "#C8D3F5",
         }}>
           <div><span style={{ color: "#565F89" }}># ToonVault API Keys - .env file</span></div>
+          <div><span style={{ color: "#BB9AF7" }}>OPENROUTER_API_KEY</span>=<span style={{ color: "#9ECE6A" }}>your_openrouter_key_here</span></div>
           <div><span style={{ color: "#BB9AF7" }}>GEMINI_API_KEY</span>=<span style={{ color: "#9ECE6A" }}>your_gemini_key_here</span></div>
           <div><span style={{ color: "#BB9AF7" }}>MISTRAL_API_KEY</span>=<span style={{ color: "#9ECE6A" }}>your_mistral_key_here</span></div>
           <div><span style={{ color: "#BB9AF7" }}>RUNWARE_API_KEY</span>=<span style={{ color: "#9ECE6A" }}>your_runware_key_here</span></div>
           <div><span style={{ color: "#BB9AF7" }}>PAYPAL_CLIENT_ID</span>=<span style={{ color: "#9ECE6A" }}>your_paypal_client_id</span></div>
           <div><span style={{ color: "#BB9AF7" }}>PAYPAL_SECRET</span>=<span style={{ color: "#9ECE6A" }}>your_paypal_secret</span></div>
-          <div><span style={{ color: "#BB9AF7" }}>GOOGLE_CLIENT_ID</span>=<span style={{ color: "#9ECE6A" }}>your_google_oauth_id</span></div>
-          <div><span style={{ color: "#BB9AF7" }}>FACEBOOK_APP_ID</span>=<span style={{ color: "#9ECE6A" }}>your_facebook_app_id</span></div>
-          <div><span style={{ color: "#BB9AF7" }}>JWT_SECRET</span>=<span style={{ color: "#9ECE6A" }}>super_secret_jwt_key_256bit</span></div>
-          <div><span style={{ color: "#BB9AF7" }}>MONGODB_URI</span>=<span style={{ color: "#9ECE6A" }}>mongodb+srv://...</span></div>
         </div>
       </div>
     </div>
@@ -1252,7 +1262,6 @@ function PayPalPage({ apiKeys, setApiKeys }) {
   const [webhookUrl, setWebhookUrl] = useState("https://yourdomain.com/api/webhooks/paypal");
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState(null);
 
   const handleSave = () => {
     setApiKeys(prev => ({ ...prev, paypalClientId: clientId, paypalSecret: secret }));
@@ -1261,9 +1270,8 @@ function PayPalPage({ apiKeys, setApiKeys }) {
   };
 
   const testConnection = async () => {
-    setTesting(true); setTestResult(null);
+    setTesting(true);
     await new Promise(r => setTimeout(r, 1500));
-    setTestResult(clientId ? "success" : "error");
     setTesting(false);
   };
 
@@ -1277,7 +1285,6 @@ function PayPalPage({ apiKeys, setApiKeys }) {
       <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 6 }}>🅿 PayPal Integration</div>
       <div style={{ fontSize: 13, color: C.muted, marginBottom: 24 }}>Configure PayPal subscriptions for Silver & Gold plans</div>
 
-      {/* Mode Toggle */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
         {["sandbox", "live"].map(m => (
           <button key={m} onClick={() => setMode(m)} style={{
@@ -1316,16 +1323,6 @@ function PayPalPage({ apiKeys, setApiKeys }) {
               border: "none", borderRadius: 10, color: C.white, fontSize: 13, fontWeight: 700, cursor: "pointer",
             }}>{saved ? "✓ Saved!" : "💾 Save Config"}</button>
           </div>
-          {testResult && (
-            <div style={{
-              marginTop: 12, padding: "10px 14px", borderRadius: 10,
-              background: testResult === "success" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
-              border: `1px solid ${testResult === "success" ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
-              fontSize: 12, color: testResult === "success" ? C.green : C.red,
-            }}>
-              {testResult === "success" ? "✅ PayPal connection successful!" : "❌ Connection failed. Check your credentials."}
-            </div>
-          )}
         </div>
 
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px" }}>
@@ -1348,31 +1345,6 @@ function PayPalPage({ apiKeys, setApiKeys }) {
           ))}
         </div>
       </div>
-
-      {/* Integration Guide */}
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px" }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 14 }}>📋 Quick Integration Code</div>
-        <div style={{
-          background: "#0D0B16", border: `1px solid ${C.border}`, borderRadius: 12,
-          padding: "16px 18px", fontFamily: "monospace", fontSize: 11.5, lineHeight: 1.9, color: "#C8D3F5", overflowX: "auto",
-        }}>
-          <div><span style={{ color: "#565F89" }}>// Node.js PayPal subscription setup</span></div>
-          <div><span style={{ color: "#BB9AF7" }}>const</span> paypal = <span style={{ color: "#7AA2F7" }}>require</span>(<span style={{ color: "#9ECE6A" }}>'@paypal/checkout-server-sdk'</span>);</div>
-          <br />
-          <div><span style={{ color: "#BB9AF7" }}>const</span> environment = <span style={{ color: "#BB9AF7" }}>new</span> paypal.core.<span style={{ color: "#7AA2F7" }}>SandboxEnvironment</span>(</div>
-          <div>&nbsp;&nbsp;process.env.<span style={{ color: "#FF9E64" }}>PAYPAL_CLIENT_ID</span>,</div>
-          <div>&nbsp;&nbsp;process.env.<span style={{ color: "#FF9E64" }}>PAYPAL_SECRET</span></div>
-          <div>);</div>
-          <br />
-          <div><span style={{ color: "#BB9AF7" }}>const</span> client = <span style={{ color: "#BB9AF7" }}>new</span> paypal.core.<span style={{ color: "#7AA2F7" }}>PayPalHttpClient</span>(environment);</div>
-          <br />
-          <div><span style={{ color: "#565F89" }}>// Create subscription endpoint</span></div>
-          <div>app.<span style={{ color: "#7AA2F7" }}>post</span>(<span style={{ color: "#9ECE6A" }}>'/api/subscribe'</span>, <span style={{ color: "#BB9AF7" }}>async</span> (req, res) {"=>"} {"{"}</div>
-          <div>&nbsp;&nbsp;<span style={{ color: "#BB9AF7" }}>const</span> {"{ planId, userId }"} = req.body;</div>
-          <div>&nbsp;&nbsp;<span style={{ color: "#565F89" }}>// Create PayPal subscription order...</span></div>
-          <div>{"}"});</div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -1381,25 +1353,38 @@ function PayPalPage({ apiKeys, setApiKeys }) {
 //  SETTINGS PAGE
 // ═══════════════════════════════════════════════════════
 function SettingsPage({ user, onLogout }) {
-  const [settings, setSettings] = useState({
-    emailNotifs: true,
-    autoApprove: false,
-    maintenanceMode: false,
-    adultContent: true,
-    registrationsOpen: true,
-    twoFactor: false,
-    analyticsTracking: true,
-    autoBackup: true,
-  });
+  const [dbSettings, setDbSettings] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
-  const [siteName, setSiteName] = useState("ToonVault");
-  const [siteDesc, setSiteDesc] = useState("AI-powered interactive storytelling platform");
-  const [supportEmail, setSupportEmail] = useState("support@toonvault.io");
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get('/api/admin/settings', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setDbSettings(res.data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
+
+  const updateSetting = async (key, value) => {
+    try {
+      await axios.post('/api/admin/settings', { key, value }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setDbSettings(prev => prev.map(s => s.key === key ? { ...s, value } : s));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) { console.error(err); }
+  };
+
+  const getVal = (key) => dbSettings.find(s => s.key === key)?.value;
+
+  if (loading) return <div style={{ color: C.muted, padding: 20 }}>Loading settings...</div>;
 
   return (
     <div>
@@ -1409,56 +1394,36 @@ function SettingsPage({ user, onLogout }) {
         {/* General Settings */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px" }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 18 }}>🌐 General Settings</div>
-          <Input label="SITE NAME" value={siteName} onChange={setSiteName} icon="🏷" />
-          <Input label="SITE DESCRIPTION" value={siteDesc} onChange={setSiteDesc} icon="📝" />
-          <Input label="SUPPORT EMAIL" value={supportEmail} onChange={setSupportEmail} icon="✉️" type="email" />
-          <button onClick={handleSave} style={{
-            width: "100%", padding: "11px", marginTop: 8,
-            background: saved ? C.green : "linear-gradient(135deg,#8B5CF6,#F43F8E)",
-            border: "none", borderRadius: 10, color: C.white, fontSize: 13, fontWeight: 700, cursor: "pointer",
-          }}>{saved ? "✅ Settings Saved!" : "💾 Save Changes"}</button>
+          <Input label="SITE NAME" value={getVal('site_name') || "ToonVault"} onChange={v => updateSetting('site_name', v)} icon="🏷" />
+          <div style={{ marginTop: 20 }}>
+             <div style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 10 }}>PLATFORM STATUS</div>
+             <Toggle 
+                label="Maintenance Mode" 
+                checked={getVal('maintenance_mode') === 'true'} 
+                onChange={v => updateSetting('maintenance_mode', v.toString())} 
+              />
+          </div>
+          <div style={{ marginTop: 10, fontSize: 12, color: saved ? C.green : C.muted }}>
+             {saved ? "✅ Setting saved!" : "Changes are saved automatically."}
+          </div>
         </div>
 
         {/* Toggle Settings */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 10 }}>🔧 Feature Toggles</div>
-          {[
-            ["emailNotifs", "Email Notifications"],
-            ["autoApprove", "Auto-Approve Stories"],
-            ["maintenanceMode", "Maintenance Mode"],
-            ["adultContent", "18+ Content Enabled"],
-            ["registrationsOpen", "Open Registrations"],
-            ["twoFactor", "Force 2FA for Admins"],
-            ["analyticsTracking", "Analytics Tracking"],
-            ["autoBackup", "Auto Daily Backup"],
-          ].map(([key, label]) => (
-            <Toggle key={key} label={label} checked={settings[key]} onChange={v => setSettings(p => ({ ...p, [key]: v }))} />
-          ))}
-        </div>
-
-        {/* Security */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 18 }}>🔐 Security</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {[
-              { label: "Change Admin Password", icon: "🔑", color: C.plum },
-              { label: "Revoke All Sessions", icon: "🚪", color: C.rose },
-              { label: "Download Audit Log", icon: "📋", color: C.gold },
-              { label: "Enable IP Whitelist", icon: "🛡", color: C.green },
-            ].map(a => (
-              <button key={a.label} style={{
-                padding: "12px 16px", border: `1px solid ${C.border}`, background: C.surface2,
-                borderRadius: 11, color: C.text, fontSize: 13, fontWeight: 500,
-                cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10,
-                transition: "all 0.15s",
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = a.color; e.currentTarget.style.background = `${a.color}10`; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.surface2; }}
-              >
-                <span>{a.icon}</span> {a.label}
-              </button>
-            ))}
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 10 }}>🔧 Popup & Interface</div>
+          <div style={{ background: C.surface2, padding: "12px 16px", borderRadius: 12, border: `1px solid ${C.border}`, marginBottom: 16 }}>
+            <Toggle 
+              label="Show 'Become a Creator' Popup" 
+              checked={getVal('show_creator_popup') === 'true'} 
+              onChange={v => updateSetting('show_creator_popup', v.toString())} 
+            />
+            <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>
+              When enabled, the creator recruitment popup appears on the homepage for all visitors.
+            </div>
           </div>
+          <Toggle label="Auto-Approve Stories" checked={false} onChange={() => {}} />
+          <Toggle label="Open Registrations" checked={true} onChange={() => {}} />
+          <Toggle label="Email Notifications" checked={true} onChange={() => {}} />
         </div>
 
         {/* Admin Profile */}
@@ -1470,13 +1435,10 @@ function SettingsPage({ user, onLogout }) {
               display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: C.white,
             }}>{user?.avatar || "A"}</div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{user?.name}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{user?.name || "Admin"}</div>
               <div style={{ fontSize: 12, color: C.muted }}>{user?.email}</div>
-              <Badge type="Gold">Super Admin</Badge>
             </div>
           </div>
-          <Input label="DISPLAY NAME" value={user?.name || ""} onChange={() => {}} icon="👤" />
-          <Input label="EMAIL" value={user?.email || ""} onChange={() => {}} icon="✉️" type="email" />
           <button onClick={onLogout} style={{
             width: "100%", padding: "11px", marginTop: 8,
             background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
@@ -1599,10 +1561,48 @@ function AnalyticsPage() {
 //  MAIN APP
 // ═══════════════════════════════════════════════════════
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
   const [page, setPage] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [apiKeys, setApiKeys] = useState({ gemini: "", mistral: "", runware: "", paypalClientId: "", paypalSecret: "" });
+  const [apiKeys, setApiKeys] = useState({ gemini: "", mistral: "", runware: "", openrouter: "", paypalClientId: "", paypalSecret: "" });
+
+  // Generation Wizards State
+  const [showGenWizard, setShowGenWizard] = useState(false);
+  const [genStep, setGenStep] = useState(1);
+  const [genData, setGenData] = useState({ topic: "", prompt: "", images: 3, category: "Fantasy", status: "published" });
+
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleFinishStory = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await axios.post('/api/stories/generate', genData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.status === 200) {
+        setShowGenWizard(false);
+        setGenStep(1);
+        setPage("stories");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Story generation failed.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const GENRES_LIST = ["Romance", "Fantasy", "Action", "Drama", "Sci-Fi", "Horror", "Comedy", "Slice of Life"];
+
+  useEffect(() => {
+    // Fetch initial API keys from backend
+    axios.get("/api/admin/apikeys", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then(res => {
+        setApiKeys(prev => ({ ...prev, ...res.data }));
+      })
+      .catch(err => console.error("Error fetching API keys:", err));
+  }, []);
   const [notifications, setNotifications] = useState(3);
 
   const handleLogout = () => {
@@ -1650,7 +1650,7 @@ export default function AdminDashboard() {
         transition: "width 0.25s",
       }}>
         {/* Logo */}
-        <div style={{ padding: "18px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, minHeight: 60 }}>
+        <div style={{ padding: "18px 14px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, minHeight: 60, cursor: "pointer" }} onClick={() => navigate("/")}>
           <div style={{
             width: 32, height: 32, borderRadius: 9, flexShrink: 0,
             background: "linear-gradient(135deg, #8B5CF6, #F43F8E)",
@@ -1662,7 +1662,7 @@ export default function AdminDashboard() {
               <span style={{ fontSize: 10, color: C.muted, letterSpacing: 1, fontWeight: 600, marginLeft: 4 }}>ADMIN</span>
             </span>
           )}
-          <button onClick={() => setSidebarCollapsed(p => !p)} style={{
+          <button onClick={(e) => { e.stopPropagation(); setSidebarCollapsed(p => !p); }} style={{
             marginLeft: "auto", background: "none", border: "none", color: C.muted,
             cursor: "pointer", fontSize: 16, padding: "2px 4px", flexShrink: 0,
           }}>{sidebarCollapsed ? "›" : "‹"}</button>
@@ -1705,6 +1705,23 @@ export default function AdminDashboard() {
             </div>
           ))}
         </nav>
+
+        {/* Quick Actions */}
+        {!sidebarCollapsed && (
+          <div style={{ padding: "0 16px", marginBottom: 20 }}>
+            <button 
+              onClick={() => setShowGenWizard(true)}
+              style={{
+                width: "100%", padding: "12px", background: `linear-gradient(135deg, ${C.plum}, ${C.rose})`,
+                color: "white", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 800,
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                boxShadow: `0 8px 20px ${C.plum}40`, transition: "all 0.2s", marginBottom: 10
+              }}
+            >
+              <span style={{ fontSize: 16 }}>✨</span> Write Story
+            </button>
+          </div>
+        )}
 
         {/* User footer */}
         {!sidebarCollapsed && (
@@ -1770,6 +1787,114 @@ export default function AdminDashboard() {
           {renderPage()}
         </div>
       </main>
+      {/* ═══ GENERATION WIZARD MODAL ═══ */}
+      {showGenWizard && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
+          padding: 20
+        }}>
+          <div style={{
+            background: C.surface, borderRadius: 24, width: "100%", maxWidth: 500,
+            padding: 32, border: `1px solid ${C.border}`, boxShadow: "0 24px 64px rgba(0,0,0,0.5)"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>
+                {genStep === 1 ? "Step 1: Core Concept" : "Step 2: Configuration"}
+              </div>
+              <button onClick={() => setShowGenWizard(false)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 20 }}>✕</button>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+              {[1, 2].map(s => (
+                <div key={s} style={{ height: 4, flex: 1, borderRadius: 2, background: s <= genStep ? C.plum : C.border }} />
+              ))}
+            </div>
+
+            {genStep === 1 ? (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 8, letterSpacing: 0.5 }}>STORY TOPIC / TITLE</div>
+                <input 
+                  type="text" 
+                  value={genData.topic} 
+                  onChange={e => setGenData({...genData, topic: e.target.value})}
+                  placeholder="The Cyberpunk Samurai's Vow" 
+                  style={{ width: "100%", padding: "14px 18px", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 14, color: C.text, fontSize: 14, marginBottom: 22 }}
+                />
+
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.muted, marginBottom: 8, letterSpacing: 0.5 }}>STORY PREMISE (OPTIONAL)</div>
+                <textarea 
+                  value={genData.prompt}
+                  onChange={e => setGenData({...genData, prompt: e.target.value})}
+                  placeholder="Briefly describe the plot or characters..." 
+                  style={{ width: "100%", height: 110, padding: "14px 18px", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 14, color: C.text, fontSize: 14, resize: "none" }}
+                />
+
+                <button 
+                  onClick={() => setGenStep(2)}
+                  disabled={!genData.topic}
+                  style={{ width: "100%", marginTop: 28, padding: "16px", background: C.plum, color: "white", border: "none", borderRadius: 14, fontWeight: 800, cursor: "pointer", opacity: genData.topic ? 1 : 0.5 }}
+                >
+                  Configure Options →
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 8 }}>AI PANELS</div>
+                    <select 
+                      value={genData.images}
+                      onChange={e => setGenData({...genData, images: parseInt(e.target.value)})}
+                      style={{ width: "100%", padding: "12px", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, color: C.text }}
+                    >
+                      {[1, 3, 5, 8, 12].map(n => <option key={n} value={n}>{n} Panels</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 8 }}>CATEGORY</div>
+                    <select 
+                      value={genData.category}
+                      onChange={e => setGenData({...genData, category: e.target.value})}
+                      style={{ width: "100%", padding: "12px", background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, color: C.text }}
+                    >
+                      {GENRES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 10 }}>STORY STATUS</div>
+                <div style={{ display: "flex", gap: 12, marginBottom: 30 }}>
+                  {["draft", "published", "pending"].map(s => (
+                    <button 
+                      key={s}
+                      onClick={() => setGenData({...genData, status: s})}
+                      style={{ 
+                        flex: 1, padding: "12px", borderRadius: 12, border: `1px solid ${genData.status === s ? C.plum : C.border}`,
+                        background: genData.status === s ? `${C.plum}15` : "transparent",
+                        color: genData.status === s ? C.plum : C.muted,
+                        fontSize: 12, fontWeight: 700, cursor: "pointer", textTransform: "capitalize"
+                      }}
+                    >{s}</button>
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", gap: 14 }}>
+                  <button onClick={() => setGenStep(1)} style={{ flex: 1, padding: "16px", background: "none", border: `1px solid ${C.border}`, color: C.muted, borderRadius: 14, fontWeight: 700, cursor: "pointer" }}>Back</button>
+                  <button 
+                    onClick={handleFinishStory}
+                    disabled={isGenerating}
+                    style={{ flex: 2, padding: "16px", background: `linear-gradient(135deg, ${C.plum}, ${C.rose})`, color: "white", border: "none", borderRadius: 14, fontWeight: 800, cursor: "pointer" }}
+                  >
+                    {isGenerating ? "Processing AI..." : "🚀 Launch Generation"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

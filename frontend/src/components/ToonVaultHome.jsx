@@ -212,12 +212,52 @@ export default function ToonVaultHome() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchVal, setSearchVal] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
   const [liveStories, setLiveStories] = useState(STORIES);
+  const [showPopup, setShowPopup] = useState(false);
+  const searchRef = useRef(null);
   const genreScrollRef = useRef();
 
   const scrollGenres = (dir) => {
     genreScrollRef.current?.scrollBy({ left: dir * 250, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    // Check if popup should be shown based on admin setting
+    axios.get('/api/settings/public')
+      .then(r => {
+        if (r.data.show_creator_popup === 'true') {
+           setTimeout(() => setShowPopup(true), 2500);
+        }
+      })
+      .catch(() => {
+         // Fallback behavior if API fails or not set
+         setTimeout(() => setShowPopup(true), 6000);
+      });
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchOpen(false);
+        setSearchVal("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (searchVal.trim()) {
+      const filtered = liveStories.filter(s => 
+        s.title.toLowerCase().includes(searchVal.toLowerCase()) ||
+        s.genre?.toLowerCase().includes(searchVal.toLowerCase())
+      );
+      setSearchResults(filtered.slice(0, 6));
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchVal, liveStories]);
 
   useEffect(() => {
     const t = setInterval(() => setHeroIndex(i => (i + 1) % FEATURED.length), 4000);
@@ -242,7 +282,29 @@ export default function ToonVaultHome() {
     return () => clearInterval(t);
   }, []);
 
-  const categoryTabs = ["Drama", "Fantasy", "Comedy", "Action", "Slice of life", "Romance", "Superhero", "Sci-fi"];
+  const categoryTabs = ["All", "Drama", "Fantasy", "Comedy", "Action", "Slice of life", "Romance", "Superhero", "Sci-fi"];
+  
+  useEffect(() => {
+    if (activeGenre !== "all") {
+      const genreLabel = GENRES.find(g => g.id === activeGenre)?.label;
+      if (genreLabel) {
+        setActiveCategoryTab(genreLabel);
+        document.querySelector("#categories")?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [activeGenre]);
+
+  const handleNav = (item) => {
+    if (item.path) {
+      navigate(item.path);
+    } else if (item.target) {
+      const el = document.querySelector(item.target);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   const dailyStories = liveStories.filter(s => s.day === activeDay);
   const featured = FEATURED[heroIndex];
 
@@ -264,39 +326,89 @@ export default function ToonVaultHome() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {["Originals", "Categories", "Rankings", "Canvas", "Shop", "Creators 101"].map(item => (
-              <button key={item} style={{
+            {[
+              { label: "Originals", target: "#daily-schedule" },
+              { label: "Categories", target: "#categories" },
+              { label: "Rankings", target: "#rankings" },
+              { label: "Canvas", target: "#collections" },
+              { label: "Creators 101", target: "#creators" }
+            ].map(item => (
+              <button key={item.label} onClick={() => handleNav(item)} style={{
                 padding: "8px 13px", border: "none", background: "none",
                 fontSize: 14, fontWeight: 500, color: COLORS.muted, cursor: "pointer",
                 borderRadius: 8, transition: "all 0.2s",
               }}
                 onMouseEnter={e => { e.currentTarget.style.background = COLORS.plumLight; e.currentTarget.style.color = COLORS.plum; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = COLORS.muted; }}
-              >{item}</button>
+              >{item.label}</button>
             ))}
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ position: "relative" }}>
+            <div ref={searchRef} style={{ position: "relative" }}>
               {searchOpen ? (
-                <input
-                  autoFocus
-                  value={searchVal}
-                  onChange={e => setSearchVal(e.target.value)}
-                  onBlur={() => { if (!searchVal) setSearchOpen(false); }}
-                  placeholder="Search stories, genres..."
-                  style={{
-                    padding: "8px 36px 8px 14px", borderRadius: 20, border: `1.5px solid ${COLORS.plum}`,
-                    background: COLORS.card, fontSize: 13, color: COLORS.ink, outline: "none", width: 220,
-                  }}
-                />
+                <div style={{ position: "relative" }}>
+                  <input
+                    autoFocus
+                    value={searchVal}
+                    onChange={e => setSearchVal(e.target.value)}
+                    placeholder="Search stories, genres..."
+                    style={{
+                      padding: "10px 40px 10px 16px", borderRadius: 24, border: `2px solid ${COLORS.plum}`,
+                      background: COLORS.card, fontSize: 14, color: COLORS.ink, outline: "none", width: 280,
+                      boxShadow: "0 4px 12px rgba(109,74,232,0.15)", transition: "all 0.3s",
+                    }}
+                  />
+                  <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16 }}>🔍</span>
+                  
+                  {/* LIVE SEARCH DROPDOWN */}
+                  {searchVal && (
+                    <div style={{
+                      position: "absolute", top: "110%", left: 0, right: 0,
+                      background: "white", borderRadius: 16, border: `1px solid ${COLORS.border}`,
+                      boxShadow: "0 10px 30px rgba(0,0,0,0.12)", zIndex: 1000, overflow: "hidden",
+                      maxHeight: 400, overflowY: "auto"
+                    }}>
+                      {searchResults.length > 0 ? (
+                        searchResults.map(s => (
+                          <div key={s.id} 
+                            onClick={() => { navigate(`/story/${s.id}`); setSearchOpen(false); setSearchVal(""); }}
+                            style={{ 
+                              display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", 
+                              cursor: "pointer", borderBottom: `1px solid ${COLORS.border}`,
+                              transition: "background 0.2s"
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = COLORS.plumLight}
+                            onMouseLeave={e => e.currentTarget.style.background = "white"}
+                          >
+                            <div style={{ width: 32, height: 32, borderRadius: 6, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{s.cover}</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.ink }}>{s.title}</div>
+                              <div style={{ fontSize: 11, color: COLORS.muted }}>{s.genre}</div>
+                            </div>
+                            <div style={{ fontSize: 12, color: COLORS.gold }}>⭐ {s.rating || "4.8"}</div>
+                          </div>
+                        ))
+                      ) : (
+                        <div style={{ padding: "20px", textAlign: "center", color: COLORS.muted, fontSize: 13 }}>
+                          No stories found for "{searchVal}" 🔍
+                        </div>
+                      )}
+                      <div style={{ padding: "10px", textAlign: "center", background: COLORS.cardTint, fontSize: 12, fontWeight: 600, color: COLORS.plum, cursor: "pointer" }}>
+                        View all results →
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button onClick={() => setSearchOpen(true)} style={{
-                  padding: "8px 14px", border: `1px solid ${COLORS.border}`, background: COLORS.card,
-                  borderRadius: 20, fontSize: 13, color: COLORS.muted, cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 6,
-                }}>
-                  🔍 <span>Search</span>
+                  padding: "9px 18px", border: `1px solid ${COLORS.border}`, background: COLORS.card,
+                  borderRadius: 24, fontSize: 14, color: COLORS.muted, cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = COLORS.plum}
+                >
+                  🔍 <span style={{ fontWeight: 500 }}>Search stories...</span>
                 </button>
               )}
             </div>
@@ -305,12 +417,12 @@ export default function ToonVaultHome() {
               background: "transparent", borderRadius: 22, fontSize: 13,
               fontWeight: 600, color: COLORS.plum, cursor: "pointer",
             }}>Log in</button>
-            <button style={{
+            <button onClick={() => navigate('/dashboard?open=story')} style={{
               padding: "9px 20px", border: "none",
               background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.plumDark})`,
               borderRadius: 22, fontSize: 13, fontWeight: 600, color: "white",
               cursor: "pointer", boxShadow: "0 2px 10px rgba(109,74,232,0.3)",
-            }}>✏️ Publish</button>
+            }}>✏️ Write Story</button>
           </div>
         </div>
 
@@ -356,16 +468,17 @@ export default function ToonVaultHome() {
               <h1 style={{ fontSize: 36, fontWeight: 800, color: "white", margin: "0 0 10px", lineHeight: 1.2, letterSpacing: -0.5 }}>{featured.title}</h1>
               <p style={{ fontSize: 16, color: "rgba(255,255,255,0.82)", margin: "0 0 8px", lineHeight: 1.6 }}>{featured.subtitle}</p>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", margin: "0 0 28px" }}>{featured.genre}</p>
-              <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
                 <button style={{
                   padding: "12px 28px", background: "white", color: COLORS.plum,
                   border: "none", borderRadius: 24, fontSize: 14, fontWeight: 700, cursor: "pointer",
                 }}>▶ Start reading</button>
-                <button style={{
-                  padding: "12px 24px", background: "rgba(255,255,255,0.18)",
-                  color: "white", border: "1.5px solid rgba(255,255,255,0.4)",
+                <button onClick={() => navigate('/dashboard?open=story')} style={{
+                  padding: "12px 24px", background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.rose})`,
+                  color: "white", border: "none",
                   borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                }}>+ Follow story</button>
+                  boxShadow: "0 4px 14px rgba(232,106,138,0.4)"
+                }}>✏️ Create Story</button>
               </div>
             </div>
             <div style={{ fontSize: 120, opacity: 0.4, position: "absolute", right: 60, bottom: -10, filter: "blur(1px)", userSelect: "none" }}>{featured.cover}</div>
@@ -423,7 +536,7 @@ export default function ToonVaultHome() {
         </section>
 
         {/* ═══ POPULAR BY CATEGORY ═══ */}
-        <section style={{ marginBottom: 44 }}>
+        <section id="categories" style={{ marginBottom: 44, scrollMarginTop: 80 }}>
           <SectionHeader title="📚 Popular by Category" viewAll />
           <div style={{ display: "flex", gap: 8, marginBottom: 20, overflowX: "auto", scrollbarWidth: "none" }}>
             {categoryTabs.map(tab => (
@@ -443,7 +556,7 @@ export default function ToonVaultHome() {
         </section>
 
         {/* ═══ THEMATIC COLLECTIONS ═══ */}
-        <section style={{ marginBottom: 44 }}>
+        <section id="collections" style={{ marginBottom: 44, scrollMarginTop: 80 }}>
           <SectionHeader title="💫 Collections for You" sub="Handpicked themes our readers love" viewAll />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
             {TRENDING_COLLECTIONS.map((c, i) => (
@@ -473,7 +586,7 @@ export default function ToonVaultHome() {
         </section>
 
         {/* ═══ DAILY SCHEDULE ═══ */}
-        <section style={{ marginBottom: 44 }}>
+        <section id="daily-schedule" style={{ marginBottom: 44, scrollMarginTop: 80 }}>
           <SectionHeader title="📅 Daily Schedule" viewAll />
           <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
             {DAYS.map(day => (
@@ -528,7 +641,7 @@ export default function ToonVaultHome() {
         </section>
 
         {/* ═══ RANKINGS ═══ */}
-        <section style={{ marginBottom: 44 }}>
+        <section id="rankings" style={{ marginBottom: 44, scrollMarginTop: 80 }}>
           <SectionHeader title="🏆 Rankings" sub="Most read this week" viewAll />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 10 }}>
             {liveStories.slice(0, 8).map((s, i) => (
@@ -602,7 +715,7 @@ export default function ToonVaultHome() {
         </section>
 
         {/* ═══ FOR CREATORS CTA ═══ */}
-        <section style={{ marginBottom: 44 }}>
+        <section id="creators" style={{ marginBottom: 44, scrollMarginTop: 80 }}>
           <div style={{
             background: `linear-gradient(135deg, ${COLORS.ink} 0%, #3D1A5C 100%)`,
             borderRadius: 20, padding: "40px 44px",
@@ -701,7 +814,18 @@ export default function ToonVaultHome() {
               <div key={col.title}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "white", letterSpacing: 1, textTransform: "uppercase", marginBottom: 14 }}>{col.title}</div>
                 {col.links.map(l => (
-                  <div key={l} style={{ fontSize: 13, marginBottom: 9, cursor: "pointer" }}
+                  <div key={l} 
+                    onClick={() => {
+                      const mapping = {
+                        "Originals": "#daily-schedule",
+                        "Categories": "#categories",
+                        "Rankings": "#rankings",
+                        "Canvas": "#collections",
+                        "Creators 101": "#creators"
+                      };
+                      handleNav({ target: mapping[l], path: l === "Pricing" ? "/pricing" : null });
+                    }}
+                    style={{ fontSize: 13, marginBottom: 9, cursor: "pointer" }}
                     onMouseEnter={e => e.currentTarget.style.color = "white"}
                     onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}
                   >{l}</div>
@@ -722,6 +846,95 @@ export default function ToonVaultHome() {
           </div>
         </div>
       </footer>
+
+      {/* ═══ BECOME A CREATOR POPUP ═══ */}
+      {showPopup && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
+          padding: 20
+        }}>
+          <div style={{
+            background: "linear-gradient(135deg, #0A0910 0%, #1A1730 100%)",
+            borderRadius: 28, width: "100%", maxWidth: 660, padding: "32px 48px",
+            position: "relative", border: "1px solid rgba(139,92,246,0.3)",
+            boxShadow: "0 32px 90px rgba(0,0,0,0.6), inset 0 0 80px rgba(139,92,246,0.05)",
+            textAlign: "center"
+          }}>
+            {/* Close Button */}
+            <button onClick={() => setShowPopup(false)} style={{
+              position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", width: 36, height: 36, borderRadius: 18,
+              fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.2s"
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "white"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
+            >×</button>
+            
+            <div style={{
+              width: 64, height: 64, borderRadius: 20, margin: "0 auto 20px",
+              background: "linear-gradient(135deg, #8B5CF6, #F43F8E)",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32,
+              boxShadow: "0 10px 28px rgba(139,92,246,0.35)"
+            }}>✍️</div>
+            
+            <h2 style={{ fontSize: 28, fontWeight: 800, color: "white", margin: "0 0 12px", letterSpacing: -0.5 }}>
+              Become a ToonVault Creator
+            </h2>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.75)", margin: "0 auto 28px", lineHeight: 1.5, maxWidth: 500 }}>
+              Unleash your imagination and share your worlds with millions. Whether it's a breathtaking comic or an immersive novel, your audience is waiting.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32, textAlign: "left" }}>
+              {[
+                { icon: "💰", title: "Monetize Day One", desc: "Earn royalties immediately." },
+                { icon: "🎨", title: "AI Panels", desc: "Generate stunning art with AI." },
+                { icon: "👥", title: "Global Audience", desc: "Reach millions of readers instantly." },
+                { icon: "📊", title: "Creator Analytics", desc: "Track your story views and growth." }
+              ].map((feat, idx) => (
+                <div key={idx} style={{
+                  background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 16, padding: "14px 18px", display: "flex", gap: 12, alignItems: "center",
+                  transition: "background 0.2s"
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                >
+                  <div style={{ fontSize: 24 }}>{feat.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "white", marginBottom: 2 }}>{feat.title}</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.3 }}>{feat.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <button onClick={() => navigate('/dashboard?open=story')} style={{
+              width: "100%", padding: "16px", border: "none",
+              background: "linear-gradient(135deg, #8B5CF6, #F43F8E)",
+              borderRadius: 16, fontSize: 16, fontWeight: 700, color: "white", letterSpacing: 0.5,
+              cursor: "pointer", boxShadow: "0 8px 24px rgba(139,92,246,0.3)",
+              transition: "transform 0.2s, box-shadow 0.2s"
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(139,92,246,0.4)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(139,92,246,0.3)"; }}
+            >
+              Start Writing Now 🚀
+            </button>
+            <button onClick={() => setShowPopup(false)} style={{
+              background: "none", border: "none", color: "rgba(255,255,255,0.4)",
+              fontSize: 13, marginTop: 20, cursor: "pointer", transition: "color 0.2s"
+            }}
+              onMouseEnter={e => e.currentTarget.style.color = "white"}
+              onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.4)"}
+            >
+              I'll explore first
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

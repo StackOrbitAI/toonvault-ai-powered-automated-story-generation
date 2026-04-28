@@ -93,12 +93,6 @@ function Reader() {
           <h1>Toonvault</h1>
         </div>
         <div className="nav-actions">
-           {wallet && (
-             <div className="wallet-badge glass-morphism" onClick={() => navigate('/store')}>
-                <Coins size={16} />
-                <span>{wallet.balance}</span>
-             </div>
-           )}
            <button onClick={() => navigate('/user')} className="p-2 glass-morphism rounded-full">
               <Heart size={18} />
            </button>

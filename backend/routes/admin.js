@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Story = require('../models/Story');
 const Payment = require('../models/Payment');
+const Setting = require('../models/Setting');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 
@@ -59,12 +60,44 @@ router.get('/transactions', auth, adminOnly, async (req, res) => {
 
 // Settings
 router.get('/settings', auth, adminOnly, async (req, res) => {
-    res.json([
-        { key: 'site_name', value: 'ToonVault' },
-        { key: 'maintenance_mode', value: 'false' },
-        { key: 'free_episode_interval_hrs', value: '3' },
-        { key: 'coin_rate_usd', value: '1.00 = 100 coins' }
-    ]);
+    try {
+        let settings = await Setting.find();
+        if (settings.length === 0) {
+            // Seed default settings
+            const defaults = [
+                { key: 'show_creator_popup', value: 'true', label: 'Show Creator Popup', type: 'boolean' },
+                { key: 'site_name', value: 'ToonVault', label: 'Site Name', type: 'text' },
+                { key: 'maintenance_mode', value: 'false', label: 'Maintenance Mode', type: 'boolean' },
+                { key: 'free_episode_interval_hrs', value: '3', label: 'Free Episode Interval (Hrs)', type: 'number' }
+            ];
+            await Setting.insertMany(defaults);
+            settings = await Setting.find();
+        }
+        res.json(settings);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Update Setting
+router.post('/settings', auth, adminOnly, async (req, res) => {
+    try {
+        const { key, value } = req.body;
+        const setting = await Setting.findOneAndUpdate({ key }, { value }, { new: true, upsert: true });
+        res.json(setting);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Get API Keys status for Admin UI
+router.get('/apikeys', auth, adminOnly, async (req, res) => {
+    // Only return the keys to authorized admins
+    res.json({
+        mistral: process.env.MISTRAL_API_KEY || "",
+        runware: process.env.RUNWARE_API_KEY || "",
+        runware_model: process.env.RUNWARE_MODEL || "civitai:133005@78200",
+        gemini: process.env.GEMINI_API_KEY || "",
+        openrouter: process.env.OPENROUTER_API_KEY || "",
+        paypalClientId: process.env.PAYPAL_CLIENT_ID || "",
+        paypalSecret: process.env.PAYPAL_SECRET || ""
+    });
 });
 
 module.exports = router;
