@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { api, getStoredUser, logout } from "../api";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import StoryWizPopup from './StoryWizPopup';
+import { Sparkles, Image as ImageIcon, Book, Zap, Rocket, Plus } from 'lucide-react';
+import AIGenerationPopup from './AIGenerationPopup';
 
 // ═══════════════════════════════════════════════════════
 // DESIGN TOKENS
@@ -488,7 +489,7 @@ function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button 
-              onClick={() => setShowWizard(true)}
+              onClick={() => setIsAIPopupOpen(true)}
               style={{
                 padding: "12px 28px", borderRadius: 24,
                 background: C.gradient, border: "none",
@@ -1594,7 +1595,7 @@ export default function ToonVaultUserDashboard() {
   const [loadingData, setLoadingData] = useState(true);
   const [initialPrompt, setInitialPrompt] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showWizard, setShowWizard] = useState(false);
+  const [isAIPopupOpen, setIsAIPopupOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1607,7 +1608,6 @@ export default function ToonVaultUserDashboard() {
     else if (openParam === "ai") setPage("ai");
 
     if (promptParam) setInitialPrompt(promptParam);
-    if (params.get("wizard") === "true") setShowWizard(true);
 
     const token = localStorage.getItem("token");
     if (!token) { navigate("/user"); return; }
@@ -1739,17 +1739,12 @@ export default function ToonVaultUserDashboard() {
           ) : PAGES[page]}
         </main>
       </div>
-
-      <StoryWizPopup 
-        isOpen={showWizard} 
-        onClose={() => setShowWizard(false)} 
-        onComplete={(res) => {
+      <AIGenerationPopup 
+        isOpen={isAIPopupOpen} 
+        onClose={() => setIsAIPopupOpen(false)} 
+        onComplete={() => {
+          setIsAIPopupOpen(false);
           refreshStories();
-          if (res?.type === 'Comic' || res?.panels?.length > 0) {
-            navigate(`/manta/${res._id}`);
-          } else {
-            setPage('stories');
-          }
         }} 
       />
     </div>
