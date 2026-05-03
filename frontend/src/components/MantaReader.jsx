@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import { ChevronLeft, Share2, Heart, MessageSquare, BookOpen, Star, MoreVertical } from 'lucide-react';
 import axios from 'axios';
@@ -19,7 +19,11 @@ export default function MantaReader() {
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
+  const [showMatureWarning, setShowMatureWarning] = useState(true);
   const scrollRef = useRef(null);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const epNum = parseInt(queryParams.get('ep')) || 1;
   
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
@@ -32,19 +36,34 @@ export default function MantaReader() {
     const fetchStory = async () => {
       try {
         const res = await axios.get(`/api/stories/${storyId}`);
-        setStory(res.data);
+        const s = res.data;
+        if (epNum > 1 && s.episodes) {
+          const ep = s.episodes.find(e => e.number === epNum);
+          if (ep) {
+            s.displayPanels = ep.panels;
+            s.displayTitle = ep.title || `Episode ${ep.number}`;
+            s.displayContent = ep.content;
+          } else {
+            s.displayPanels = s.panels;
+            s.displayTitle = "Episode 1";
+            s.displayContent = s.content;
+          }
+        } else {
+          s.displayPanels = s.panels;
+          s.displayTitle = "Episode 1";
+          s.displayContent = s.content;
+        }
+        setStory(s);
       } catch (err) {
-        // Fallback for demo
         setStory({
           title: "Under the Oak Tree (AI Reimagined)",
+          displayTitle: "Episode 1",
           authorName: "ToonVault AI",
-          panels: [
+          displayPanels: [
             "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1000",
             "https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=1000",
-            "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000",
-            "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1000",
           ],
-          description: "A beautiful AI-generated story in the style of Manta."
+          description: "A beautiful AI-generated story."
         });
       } finally {
         setLoading(false);
@@ -52,7 +71,7 @@ export default function MantaReader() {
     };
     fetchStory();
     window.scrollTo(0, 0);
-  }, [storyId]);
+  }, [storyId, epNum]);
 
   if (loading) {
     return (
@@ -66,6 +85,40 @@ export default function MantaReader() {
 
   return (
     <div style={{ background: COLORS.bg, minHeight: "100vh", color: COLORS.text, fontFamily: "'Inter', sans-serif" }}>
+      {/* ═══ MATURE WARNING POPUP ═══ */}
+      {showMatureWarning && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.9)", backdropFilter: "blur(15px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+        }}>
+          <div style={{
+            background: "#1A1A1E", border: "1px solid rgba(255,255,255,0.1)",
+            padding: "40px", borderRadius: 16, maxWidth: 400, textAlign: "center",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.8)"
+          }}>
+            <h2 style={{ color: "white", fontSize: 24, fontWeight: 900, marginBottom: 16 }}>Notice</h2>
+            <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, lineHeight: 1.6, marginBottom: 30 }}>
+              This series contains adult themes and situations and is recommended for mature audiences. Viewer discretion is advised.<br/><br/>Proceed to view content?
+            </p>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button 
+                onClick={() => navigate(-1)} 
+                style={{ flex: 1, padding: "14px", borderRadius: 8, background: "rgba(255,255,255,0.05)", color: "white", border: "none", fontWeight: 700, cursor: "pointer" }}
+              >
+                Go Back
+              </button>
+              <button 
+                onClick={() => setShowMatureWarning(false)}
+                style={{ flex: 1, padding: "14px", borderRadius: 8, background: COLORS.rose, color: "white", border: "none", fontWeight: 700, cursor: "pointer" }}
+              >
+                Proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ SITE HEADER ═══ */}
       <header style={{ 
         position: "sticky", top: 0, left: 0, right: 0, zIndex: 1100,
@@ -133,13 +186,13 @@ export default function MantaReader() {
       <main style={{ maxWidth: 800, margin: "0 auto", paddingTop: 60 }}>
         {/* Intro Cover */}
         <div style={{ padding: "40px 20px", textAlign: "center" }}>
-          <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 10 }}>{story.title}</h1>
-          <p style={{ fontSize: 14, color: COLORS.textMuted, lineHeight: 1.6 }}>{story.description}</p>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "white", textAlign: "center" }}>{story.title}</div>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, textAlign: "center", marginTop: 2 }}>{story.displayTitle}</div>
         </div>
 
         {/* Vertical Panels */}
         <div style={{ display: "flex", flexDirection: "column" }}>
-          {story.panels?.map((url, i) => (
+          {story.displayPanels?.map((url, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 50 }}
@@ -155,10 +208,10 @@ export default function MantaReader() {
               />
               
               {/* Dialogue/Text Overlay (Improved) */}
-              {story.content && (
+              {story.displayContent && (
                 (() => {
                   try {
-                    const contentArr = JSON.parse(story.content);
+                    const contentArr = JSON.parse(story.displayContent);
                     const panelData = contentArr[i];
                     if (panelData && panelData.text) {
                       return (

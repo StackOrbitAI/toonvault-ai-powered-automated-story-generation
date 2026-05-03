@@ -721,6 +721,7 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
   const [creating, setCreating] = useState(false);
   const [newStory, setNewStory] = useState({ title: "", genre: "", description: "", type: "Comic" });
   const [deleting, setDeleting] = useState(null);
+  const [genEp, setGenEp] = useState(null); // storyId
   const filters = ["All", "Live", "Draft", "Pending", "Flagged"];
 
   const filtered = filter === "All" ? (myStories || []) : (myStories || []).filter(s => s.status === filter);
@@ -744,6 +745,22 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
     try { await api.deleteStory(id); await refreshStories(); }
     catch (e) { alert("Failed to delete"); }
     finally { setDeleting(null); }
+  };
+
+  const handleAddEpisode = async (s) => {
+    const prompt = window.prompt(`Next episode for "${s.title}":\nWhat should happen next? (Leave blank for AI choice)`);
+    if (prompt === null) return;
+    
+    setGenEp(s._id || s.id);
+    try {
+      await api.generateEpisode(s._id || s.id, prompt);
+      alert("Next episode generated successfully!");
+      if (refreshStories) await refreshStories();
+    } catch (e) {
+      alert("Failed: " + (e.response?.data?.error || e.message));
+    } finally {
+      setGenEp(null);
+    }
   };
 
   const statusColor = { Live: C.green, Draft: C.cyan, Pending: C.gold, Flagged: "#EF4444" };
@@ -873,7 +890,13 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
                 {s.description && <div style={{ fontSize: 11, color: C.textDim, marginBottom: 12, lineHeight: 1.5, overflow: "hidden", display:"-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{s.description}</div>}
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => navigate(`/manta/${s._id}`)} style={{ flex: 1, padding: "8px", borderRadius: 10, background: C.plum, border: "none", color: "white", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📖 Read</button>
-                  <button style={{ flex: 1, padding: "8px", borderRadius: 10, background: C.plum+"22", border: `1px solid ${C.plum}50`, color: C.plumLight, fontSize: 11, fontWeight: 600, cursor: "pointer" }}>✍️ Edit</button>
+                  <button 
+                    onClick={() => handleAddEpisode(s)} 
+                    disabled={genEp === s._id}
+                    style={{ flex: 1, padding: "8px", borderRadius: 10, background: C.rose+"22", border: `1px solid ${C.rose}50`, color: C.rose, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+                  >
+                    {genEp === s._id ? "..." : "+ Episode"}
+                  </button>
                   <button onClick={() => handleDelete(s._id)} disabled={deleting === s._id} style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#EF4444", fontSize: 11, cursor: "pointer" }}>{deleting===s._id ? "..." : "🗑"}</button>
                 </div>
               </div>

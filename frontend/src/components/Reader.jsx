@@ -20,6 +20,7 @@ function SeriesPage() {
   const [story, setStory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showMatureWarning, setShowMatureWarning] = useState(true);
 
   useEffect(() => {
     const fetchStory = async () => {
@@ -55,6 +56,40 @@ function SeriesPage() {
 
   return (
     <div style={{ background: COLORS.bg, minHeight: "100vh", color: COLORS.text, fontFamily: "'Inter', sans-serif" }}>
+      {/* ═══ MATURE WARNING POPUP ═══ */}
+      {showMatureWarning && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.9)", backdropFilter: "blur(15px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+        }}>
+          <div style={{
+            background: "#1A1A1E", border: "1px solid rgba(255,255,255,0.1)",
+            padding: "40px", borderRadius: 16, maxWidth: 400, textAlign: "center",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.8)"
+          }}>
+            <h2 style={{ color: "white", fontSize: 24, fontWeight: 900, marginBottom: 16 }}>Notice</h2>
+            <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, lineHeight: 1.6, marginBottom: 30 }}>
+              This series contains adult themes and situations and is recommended for mature audiences. Viewer discretion is advised.<br/><br/>Proceed to view content?
+            </p>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button 
+                onClick={() => navigate(-1)} 
+                style={{ flex: 1, padding: "14px", borderRadius: 8, background: "rgba(255,255,255,0.05)", color: "white", border: "none", fontWeight: 700, cursor: "pointer" }}
+              >
+                Go Back
+              </button>
+              <button 
+                onClick={() => setShowMatureWarning(false)}
+                style={{ flex: 1, padding: "14px", borderRadius: 8, background: COLORS.rose, color: "white", border: "none", fontWeight: 700, cursor: "pointer" }}
+              >
+                Proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ HERO SECTION ═══ */}
       <div style={{ position: "relative", height: "65vh", overflow: "hidden" }}>
         {/* Background Blur */}
@@ -196,33 +231,26 @@ function SeriesPage() {
             <span style={{ fontSize: 13, color: COLORS.textMuted }}>Total 1 episode</span>
           </div>
 
-          <div 
-            onClick={() => navigate(`/manta/${story._id}`)}
-            style={{ 
-              display: "flex", gap: 16, padding: 16, borderRadius: 16, 
-              background: COLORS.panel, border: "1px solid rgba(255,255,255,0.05)",
-              cursor: "pointer", transition: "all 0.2s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
-            onMouseLeave={e => e.currentTarget.style.background = COLORS.panel}
-          >
-            <div style={{ 
-              width: 120, height: 80, borderRadius: 8, overflow: "hidden", 
-              backgroundImage: `url(${story.panels?.[1] || story.panels?.[0]})`,
-              backgroundSize: "cover", backgroundPosition: "center", flexShrink: 0
-            }} />
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Episode 1</div>
-              <div style={{ fontSize: 12, color: COLORS.textMuted, display: "flex", alignItems: "center", gap: 10 }}>
-                <span>Free</span>
-                <div style={{ width: 4, height: 4, borderRadius: "50%", background: COLORS.textMuted }} />
-                <span>2026.04.29</span>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <Play size={20} color={COLORS.textMuted} />
-            </div>
-          </div>
+          {/* Episode 1 (Original) */}
+          <EpisodeRow 
+            number={1} 
+            title="Episode 1" 
+            image={story.panels?.[0]} 
+            date="2026.04.29" 
+            onClick={() => navigate(`/manta/${story._id}?ep=1`)} 
+          />
+
+          {/* Additional Episodes */}
+          {story.episodes?.map((ep, i) => (
+            <EpisodeRow 
+                key={ep._id || i}
+                number={ep.number || i + 2}
+                title={ep.title || `Episode ${ep.number || i + 2}`}
+                image={ep.panels?.[0]}
+                date={new Date(ep.createdAt).toLocaleDateString()}
+                onClick={() => navigate(`/manta/${story._id}?ep=${ep.number || i + 2}`)}
+            />
+          ))}
           
           <div style={{ marginTop: 24, textAlign: "center", padding: "40px", border: `1px dashed ${COLORS.border}`, borderRadius: 16 }}>
              <Clock size={32} color={COLORS.textMuted} style={{ marginBottom: 12 }} />
@@ -269,4 +297,37 @@ function SeriesPage() {
     </div>
   );
 }
+
+function EpisodeRow({ number, title, image, date, onClick }) {
+  return (
+    <div 
+      onClick={onClick}
+      style={{ 
+        display: "flex", gap: 16, padding: 16, borderRadius: 16, 
+        background: COLORS.panel, border: "1px solid rgba(255,255,255,0.05)",
+        cursor: "pointer", transition: "all 0.2s", marginBottom: 12
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+      onMouseLeave={e => e.currentTarget.style.background = COLORS.panel}
+    >
+      <div style={{ 
+        width: 120, height: 80, borderRadius: 8, overflow: "hidden", 
+        backgroundImage: `url(${image})`,
+        backgroundSize: "cover", backgroundPosition: "center", flexShrink: 0
+      }} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{title}</div>
+        <div style={{ fontSize: 12, color: COLORS.textMuted, display: "flex", alignItems: "center", gap: 10 }}>
+          <span>{number === 1 ? "Free" : "Premium"}</span>
+          <div style={{ width: 4, height: 4, borderRadius: "50%", background: COLORS.textMuted }} />
+          <span>{date}</span>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <Play size={20} color={COLORS.textMuted} />
+      </div>
+    </div>
+  );
+}
+
 export default SeriesPage;

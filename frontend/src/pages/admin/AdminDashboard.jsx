@@ -229,6 +229,7 @@ const NAV_ITEMS = [
   { id: "stories", icon: "📚", label: "Stories", section: "Management" },
   { id: "revenue", icon: "💰", label: "Revenue", section: "Management" },
   { id: "imagegen", icon: "🎨", label: "Image Gen", section: "AI Tools" },
+  { id: "aistudio", icon: "✦", label: "AI Studio", section: "AI Tools" },
   { id: "apikeys", icon: "🔑", label: "API Keys", section: "AI Tools" },
   { id: "payments", icon: "💳", label: "PayPal Setup", section: "Integrations" },
   { id: "settings", icon: "⚙️", label: "Settings", section: "System" },
@@ -662,6 +663,7 @@ function StoriesPage() {
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [genEp, setGenEp] = useState(null); // storyId being processed
 
   useEffect(() => {
     api.getAdminStories().then(res => {
@@ -675,6 +677,23 @@ function StoriesPage() {
       await api.updateStoryStatus(id, status);
       setStories(prev => prev.map(s => s.id === id || s._id === id ? { ...s, status } : s));
     } catch (e) { alert("Failed to update story status"); }
+  };
+
+  const handleAddEpisode = async (s) => {
+    const prompt = window.prompt(`Next episode for "${s.title}":\nWhat should happen next? (Leave blank for AI choice)`);
+    if (prompt === null) return;
+    
+    setGenEp(s._id || s.id);
+    try {
+      await api.generateEpisode(s._id || s.id, prompt);
+      alert("Next episode generated successfully!");
+      const res = await api.getAdminStories();
+      setStories(res.data || []);
+    } catch (e) {
+      alert("Failed: " + (e.response?.data?.error || e.message));
+    } finally {
+      setGenEp(null);
+    }
   };
 
   const filtered = (stories || []).filter(s =>
@@ -725,14 +744,19 @@ function StoriesPage() {
                       { label: "Approve", color: C.green, status: "Live" },
                       { label: "Feature", color: C.gold, status: "Featured" },
                       { label: "Flag", color: C.rose, status: "Flagged" },
+                      { label: genEp === (s._id || s.id) ? "..." : "+ Ep", color: C.cyan, action: "episode" },
                       { label: "🗑", color: C.red, action: "delete" },
                     ].map(b => (
-                      <button key={b.label} onClick={async () => {
+                      <button key={b.label} 
+                        disabled={genEp === (s._id || s.id)}
+                        onClick={async () => {
                         if (b.action === 'delete') {
                           if (window.confirm("Are you sure you want to delete this story?")) {
                             await api.adminDeleteStory(s.id || s._id);
                             setStories(prev => prev.filter(item => (item.id !== s.id && item._id !== s._id)));
                           }
+                        } else if (b.action === 'episode') {
+                          handleAddEpisode(s);
                         } else {
                           handleStatus(s.id || s._id, b.status);
                         }
@@ -1640,6 +1664,125 @@ export default function AdminDashboard() {
     logout();
   };
 
+  // ═══════════════════════════════════════════════════════
+  //  AI STUDIO PAGE (ADMIN)
+  // ═══════════════════════════════════════════════════════
+  const AIStudioPage = ({ apiKeys, user }) => {
+    const [selected, setSelected] = useState(0);
+    const [topic, setTopic] = useState("");
+    const [prompt, setPrompt] = useState("");
+    const [generating, setGenerating] = useState(false);
+    const [result, setResult] = useState(null);
+    const [error, setError] = useState("");
+
+    const TOOLS = [
+      { label: "Panel Generator", icon: "🎨", desc: "Create manga-style panels", uses: 11, max: 20, color: C.plum },
+      { label: "Manta Creator", icon: "🎀", desc: "Premium vertical-strip stories", uses: 0, max: 5, color: C.rose },
+      { label: "Character Design", icon: "🎭", desc: "Design unique characters", uses: 4, max: 10, color: C.cyan },
+      { label: "World Builder", icon: "🗺️", desc: "Generate rich settings", uses: 2, max: 5, color: C.gold },
+    ];
+
+    const handleGenerate = async () => {
+      if (!topic.trim()) return;
+      setGenerating(true); setResult(null); setError("");
+      try {
+        const tool = TOOLS[selected];
+        let res;
+        if (tool.label === "Manta Creator" || tool.label === "Panel Generator") {
+          // Send to backend with optimized prompt for GhostMix / Mature Romance
+          res = await api.generateStory({ 
+            topic, 
+            prompt: `(Mature/Sexy Style) ${prompt}`, 
+            images: tool.label === "Manta Creator" ? 5 : 3, 
+            category: "Mature Romance", 
+            status: "draft" 
+          });
+          setResult(res.data.story);
+        } else {
+          res = await api.generateArticle({ topic, tone: "steamy", genre: "Romance", length: "medium" });
+          setResult(res.data.article);
+        }
+      } catch (e) {
+        setError(e.response?.data?.error || "Generation failed. Verify Runware/Mistral API keys.");
+      } finally { setGenerating(false); }
+    };
+
+    return (
+      <div style={{ animation: "fadeIn 0.4s ease" }}>
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>
+            <span style={{ background: `linear-gradient(135deg, ${C.plum}, ${C.rose})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>✦ AI Studio</span>
+          </h2>
+          <p style={{ fontSize: 13, color: C.muted, margin: 0 }}>Supercharge your storytelling with AI-powered tools</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 28 }}>
+          {TOOLS.map((tool, i) => (
+            <div key={tool.label} onClick={() => setSelected(i)} style={{
+              padding: "20px", borderRadius: 16, background: C.surface,
+              border: selected === i ? `1px solid ${tool.color}60` : `1px solid ${C.border}`,
+              cursor: "pointer", transition: "all 0.2s"
+            }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>{tool.icon}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>{tool.label}</div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 16, lineHeight: 1.4 }}>{tool.desc}</div>
+              <div style={{ height: 6, background: "rgba(255,255,255,0.05)", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
+                <div style={{ width: `${(tool.uses/tool.max)*100}%`, height: "100%", background: tool.color }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: C.muted }}>
+                <span>{tool.uses} / {tool.max} used</span>
+                <span style={{ color: tool.color, fontWeight: 700 }}>{Math.round((1 - tool.uses / tool.max) * 100)}% left</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+          <div style={{ background: C.surface, padding: 24, borderRadius: 16, border: `1px solid ${C.border}` }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>{TOOLS[selected].icon} {TOOLS[selected].label}</div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Topic / Title</label>
+              <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. The queen discovers betrayal..."
+                style={{ width: "100%", background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px", color: C.text, outline: "none" }} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 11, color: C.muted, fontWeight: 700, textTransform: "uppercase", display: "block", marginBottom: 8 }}>Details</label>
+              <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Additional details or style notes (optional)..."
+                style={{ width: "100%", height: 120, background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px", color: C.text, outline: "none", resize: "none" }} />
+            </div>
+            {error && <div style={{ color: C.rose, fontSize: 12, marginBottom: 12 }}>{error}</div>}
+            <button onClick={handleGenerate} disabled={generating || !topic} style={{
+              width: "100%", padding: 14, background: generating ? C.border : `linear-gradient(135deg, ${C.plum}, ${C.rose})`,
+              border: "none", borderRadius: 12, color: "white", fontWeight: 700, cursor: "pointer"
+            }}>{generating ? "✦ Generating..." : "✦ Generate"}</button>
+          </div>
+
+          <div style={{ background: C.surface, padding: 24, borderRadius: 16, border: `1px solid ${C.border}`, display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>Output Preview</div>
+            <div style={{ flex: 1, border: `2px dashed ${C.border}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: C.muted }}>
+              {generating ? (
+                <>
+                  <div style={{ fontSize: 40, animation: "spin 2s linear infinite", marginBottom: 12 }}>✦</div>
+                  <div style={{ fontSize: 14 }}>Crafting masterpiece...</div>
+                </>
+              ) : result ? (
+                <div style={{ width: "100%", height: "100%", padding: 20, overflowY: "auto" }}>
+                  <div style={{ color: C.plumLight, fontWeight: 700, marginBottom: 8 }}>{result.title}</div>
+                  <div style={{ fontSize: 13, lineHeight: 1.6, color: "rgba(255,255,255,0.8)" }}>{result.description || result.content}</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize: 40, opacity: 0.3, marginBottom: 12 }}>✦</div>
+                  <div style={{ fontSize: 14 }}>Your generation will appear here</div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderPage = () => {
     switch (page) {
       case "dashboard": return <DashboardPage setPage={setPage} />;
@@ -1648,6 +1791,7 @@ export default function AdminDashboard() {
       case "revenue": return <RevenuePage />;
       case "analytics": return <AnalyticsPage />;
       case "imagegen": return <ImageGenPage apiKeys={apiKeys} />;
+      case "aistudio": return <AIStudioPage apiKeys={apiKeys} user={user} />;
       case "apikeys": return <APIKeysPage apiKeys={apiKeys} setApiKeys={setApiKeys} />;
       case "payments": return <PayPalPage apiKeys={apiKeys} setApiKeys={setApiKeys} />;
       case "settings": return <SettingsPage user={user} onLogout={handleLogout} />;

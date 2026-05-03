@@ -15,7 +15,14 @@ const StorySchema = new mongoose.Schema({
     type: { type: String, enum: ['Comic', 'Novel', 'Article'], default: 'Comic' },
     description: String,
     content: String,
-    panels: [String], // URLs for AI images
+    panels: [String], // URLs for AI images (Episode 1)
+    episodes: [{
+        number: Number,
+        title: String,
+        panels: [String],
+        content: String,
+        createdAt: { type: Date, default: Date.now }
+    }],
     createdAt: { type: Date, default: Date.now }
 });
 

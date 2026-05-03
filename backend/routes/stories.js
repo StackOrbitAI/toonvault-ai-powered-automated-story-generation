@@ -146,10 +146,10 @@ router.post('/generate', auth, async (req, res) => {
             model: "mistral-small-latest",
             messages: [{
                 role: "system",
-                content: "You are a webtoon story writer. Output ONLY a JSON object with: title, description, and an array 'panels' (length 5) where each item has 'text' (dialogue/narration) and 'imagePrompt' (detailed visual description for Flux AI)."
+                content: "You are an adult webtoon story writer specializing in mature, steamy romance and drama. Output ONLY a JSON object with: title, description, and an array 'panels' (length 5) where each item has 'text' (dialogue/narration) and 'imagePrompt' (detailed visual description for Flux AI)."
             }, {
                 role: "user",
-                content: `Create a Manta-style webtoon story about: ${topic}. ${prompt ? `Context: ${prompt}` : ''}`
+                content: `Create a highly mature Manta-style webtoon story about: ${topic}. It can include steamy or sensual themes. ${prompt ? `Context: ${prompt}` : ''}`
             }],
             response_format: { type: "json_object" }
         }, { headers: { 'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}` } });
@@ -163,8 +163,8 @@ router.post('/generate', auth, async (req, res) => {
             ...storyPanels.map((p, idx) => ({
                 taskType: "imageInference",
                 taskUUID: crypto.randomUUID(),
-                model: process.env.RUNWARE_MODEL || "runware:32@1", // Upgraded to FLUX.1 [dev] for premium quality
-                positivePrompt: `masterpiece, best quality, ultra-detailed, manhwa style, korean webtoon aesthetic, rich vibrant colors, cinematic lighting, ${p.imagePrompt}`,
+                model: process.env.RUNWARE_MODEL || "civitai:24149@95489", // GhostMix (Excellent for Webtoons/Manhwa & mature romance)
+                positivePrompt: `masterpiece, best quality, ultra-detailed, beautiful manhwa style, steamy mature romance webtoon aesthetic, rich vibrant colors, cinematic lighting, ${p.imagePrompt}`,
                 width: 512,
                 height: 768,
                 numberResults: 1,
@@ -236,6 +236,78 @@ router.post('/generate-article', auth, async (req, res) => {
     } catch (err) {
         console.error("AI Article Error:", err.response?.data || err.message);
         res.status(500).json({ error: "Failed to generate article with AI" });
+    }
+});
+
+// AI Generation Route for Next Episodes
+router.post('/generate-episode', auth, async (req, res) => {
+    const { storyId, prompt: userPrompt } = req.body;
+    try {
+        const story = await Story.findById(storyId);
+        if (!story) return res.status(404).json({ error: "Story not found" });
+
+        // Continuity Context
+        const context = `This is the next episode of the story "${story.title}". 
+        Summary: ${story.description}. 
+        User wants this to happen next: ${userPrompt || "Continue the plot naturally."}`;
+
+        // 1. Generate next episode content with Mistral
+        const mistralResp = await axios.post('https://api.mistral.ai/v1/chat/completions', {
+            model: "mistral-small-latest",
+            messages: [{
+                role: "system",
+                content: "You are an adult webtoon story writer specializing in mature, steamy romance and drama. Output ONLY a JSON object with: episodeTitle, and an array 'panels' (length 5) where each item has 'text' (dialogue/narration) and 'imagePrompt' (detailed visual description for Flux AI)."
+            }, {
+                role: "user",
+                content: context
+            }],
+            response_format: { type: "json_object" }
+        }, { headers: { 'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}` } });
+
+        const aiOutput = JSON.parse(mistralResp.data.choices[0].message.content);
+        const { episodeTitle, panels: storyPanels } = aiOutput;
+
+        // 2. Generate Images
+        const runwareTasks = [
+            { taskType: "authentication", apiKey: process.env.RUNWARE_API_KEY },
+            ...storyPanels.map((p, idx) => ({
+                taskType: "imageInference",
+                taskUUID: crypto.randomUUID(),
+                model: process.env.RUNWARE_MODEL || "civitai:24149@95489",
+                positivePrompt: `masterpiece, best quality, ultra-detailed, beautiful manhwa style, steamy mature romance webtoon aesthetic, rich vibrant colors, cinematic lighting, ${p.imagePrompt}`,
+                width: 512,
+                height: 768,
+                numberResults: 1,
+                outputFormat: "JPG",
+                CFGScale: 3.5,
+                steps: 4
+            }))
+        ];
+
+        const runwareResp = await axios.post('https://api.runware.ai/v1', runwareTasks, {
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const imageUrls = runwareResp.data.data
+            .filter(d => d.taskType === "imageInference")
+            .map(d => d.imageURL);
+
+        const episodeNumber = (story.episodes?.length || 0) + 2; 
+        
+        const newEpisode = {
+            number: episodeNumber,
+            title: episodeTitle || `Episode ${episodeNumber}`,
+            panels: imageUrls,
+            content: JSON.stringify(storyPanels)
+        };
+
+        story.episodes.push(newEpisode);
+        await story.save();
+
+        res.json({ message: "Next episode generated successfully!", episode: newEpisode });
+    } catch (err) {
+        console.error("Episode Gen Error:", err.message);
+        res.status(500).json({ error: "Failed to generate next episode: " + err.message });
     }
 });
 
