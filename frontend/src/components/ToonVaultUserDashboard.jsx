@@ -82,6 +82,7 @@ const ACHIEVEMENTS = [
 const AI_TOOLS = [
   { icon: "🎨", label: "Panel Generator", desc: "Create manga-style panels", uses: 11, max: 20, color: C.plum },
   { icon: "🎀", label: "Manta Creator", desc: "Premium vertical-strip stories", uses: 0, max: 5, color: C.rose },
+  { icon: "✍️", label: "Quotes & Wisdom", desc: "Aesthetic quotes with images", uses: 0, max: 50, color: "#A78BFA" },
   { icon: "🎭", label: "Character Design", desc: "Design unique characters", uses: 4, max: 10, color: C.cyan },
   { icon: "🗺️", label: "World Builder", desc: "Generate rich settings", uses: 2, max: 5, color: C.gold },
 ];
@@ -988,8 +989,14 @@ function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
     try {
       const tool = AI_TOOLS[selected];
       let res;
-      if (tool.label === "Manta Creator" || tool.label === "Panel Generator") {
-        res = await api.generateStory({ topic, prompt, images: tool.label === "Manta Creator" ? 5 : 3, category: "Fantasy", status: "draft" });
+      if (tool.label === "Manta Creator" || tool.label === "Panel Generator" || tool.label === "Quotes & Wisdom") {
+        res = await api.generateStory({ 
+          topic, 
+          prompt: tool.label === "Quotes & Wisdom" ? `(Aesthetic Quotes) ${prompt}` : prompt, 
+          images: tool.label === "Manta Creator" ? 5 : tool.label === "Quotes & Wisdom" ? 5 : 3, 
+          category: tool.label === "Quotes & Wisdom" ? "Quotes" : "Fantasy", 
+          status: "draft" 
+        });
         setResult(res.data.story);
       } else {
         res = await api.generateArticle({ topic, tone: "creative", genre: tool.label, length: "medium" });

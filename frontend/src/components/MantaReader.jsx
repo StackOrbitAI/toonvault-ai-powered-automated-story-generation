@@ -214,17 +214,31 @@ export default function MantaReader() {
                     const contentArr = JSON.parse(story.displayContent);
                     const panelData = contentArr[i];
                     if (panelData && panelData.text) {
+                      const isQuote = story.genre === "Quotes";
                       return (
                         <div style={{
-                          position: "absolute", bottom: "10%", left: "10%", right: "10%",
-                          background: "rgba(0,0,0,0.75)", color: "white",
-                          padding: "16px 24px", borderRadius: 16,
-                          backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)",
-                          fontSize: 16, fontWeight: 500, lineHeight: 1.6, textAlign: "center",
-                          boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-                          animation: "fadeIn 0.5s ease"
+                          position: "absolute", 
+                          bottom: isQuote ? "50%" : "10%", 
+                          left: "10%", right: "10%",
+                          transform: isQuote ? "translateY(50%)" : "none",
+                          background: isQuote ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.75)", 
+                          color: "white",
+                          padding: isQuote ? "40px" : "16px 24px", 
+                          borderRadius: isQuote ? 0 : 16,
+                          backdropFilter: "blur(4px)", 
+                          border: isQuote ? "none" : "1px solid rgba(255,255,255,0.15)",
+                          fontSize: isQuote ? 24 : 16, 
+                          fontStyle: isQuote ? "italic" : "normal",
+                          fontFamily: isQuote ? "'Georgia', serif" : "inherit",
+                          fontWeight: isQuote ? 300 : 500, 
+                          lineHeight: 1.6, textAlign: "center",
+                          textShadow: isQuote ? "0 2px 10px rgba(0,0,0,0.5)" : "none",
+                          boxShadow: isQuote ? "none" : "0 10px 30px rgba(0,0,0,0.5)",
+                          animation: "fadeIn 0.8s ease"
                         }}>
+                          {isQuote && <div style={{ fontSize: 40, opacity: 0.5, marginBottom: 10 }}>“</div>}
                           {panelData.text}
+                          {isQuote && <div style={{ fontSize: 40, opacity: 0.5, marginTop: 10, textAlign: "right" }}>”</div>}
                         </div>
                       );
                     }

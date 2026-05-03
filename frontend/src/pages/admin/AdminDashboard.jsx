@@ -1678,6 +1678,7 @@ export default function AdminDashboard() {
     const TOOLS = [
       { label: "Panel Generator", icon: "🎨", desc: "Create manga-style panels", uses: 11, max: 20, color: C.plum },
       { label: "Manta Creator", icon: "🎀", desc: "Premium vertical-strip stories", uses: 0, max: 5, color: C.rose },
+      { label: "Quotes & Wisdom", icon: "✍️", desc: "Aesthetic quotes with images", uses: 0, max: 50, color: "#A78BFA" },
       { label: "Character Design", icon: "🎭", desc: "Design unique characters", uses: 4, max: 10, color: C.cyan },
       { label: "World Builder", icon: "🗺️", desc: "Generate rich settings", uses: 2, max: 5, color: C.gold },
     ];
@@ -1688,14 +1689,14 @@ export default function AdminDashboard() {
       try {
         const tool = TOOLS[selected];
         let res;
-        if (tool.label === "Manta Creator" || tool.label === "Panel Generator") {
-          // Send to backend with optimized prompt for GhostMix / Mature Romance
+        if (tool.label === "Manta Creator" || tool.label === "Panel Generator" || tool.label === "Quotes & Wisdom") {
+          // Send to backend with optimized prompt
           res = await api.generateStory({ 
             topic, 
-            prompt: `(Mature/Sexy Style) ${prompt}`, 
-            images: tool.label === "Manta Creator" ? 5 : 3, 
-            category: "Mature Romance", 
-            status: "draft" 
+            prompt: tool.label === "Quotes & Wisdom" ? `(Aesthetic Quotes) ${prompt}` : `(Mature/Sexy Style) ${prompt}`, 
+            images: tool.label === "Manta Creator" ? 5 : tool.label === "Quotes & Wisdom" ? 5 : 3, 
+            category: tool.label === "Quotes & Wisdom" ? "Quotes" : "Mature Romance", 
+            status: "Live" 
           });
           setResult(res.data.story);
         } else {
