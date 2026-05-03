@@ -96,22 +96,23 @@ export default function Login({ type = 'user' }) {
     setError('');
     setLoading(true);
     try {
+      let res;
       if (isRegister && !isAdmin) {
-        const res = await axios.post('/api/auth/register', formData);
-        const { token, user } = res.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        navigate('/dashboard');
+        res = await axios.post('/api/auth/register', formData);
       } else {
-        const res = await axios.post('/api/auth/login', {
+        res = await axios.post('/api/auth/login', {
           email: formData.email,
           password: formData.password,
         });
-        const { token, user } = res.data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        navigate('/dashboard');
       }
+      
+      const { token, user } = res.data;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      const params = new URLSearchParams(location.search);
+      const redirect = params.get('redirect');
+      navigate(redirect || '/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Authentication error.');
     } finally {
@@ -282,7 +283,7 @@ export default function Login({ type = 'user' }) {
                       </div>
                    </div>
                    {formData.plan !== 'Free' ? (
-                     <PayPalScriptProvider options={{ "client-id": "test" }}>
+                     <PayPalScriptProvider options={{ "client-id": settings.payment_paypal_client_id || "test" }}>
                        <PayPalButtons 
                          style={{ layout: "vertical", shape: "pill", color: "blue" }}
                          createOrder={(data, actions) => actions.order.create({ purchase_units: [{ amount: { value: PLANS.find(p => p.name === formData.plan)?.price } }] })}

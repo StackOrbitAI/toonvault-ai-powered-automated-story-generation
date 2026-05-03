@@ -1213,10 +1213,21 @@ function PayPalPage({ apiKeys, setApiKeys }) {
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
 
-  const handleSave = () => {
-    setApiKeys(prev => ({ ...prev, paypalClientId: clientId, paypalSecret: secret }));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    try {
+      // Save to local state
+      setApiKeys(prev => ({ ...prev, paypalClientId: clientId, paypalSecret: secret }));
+      
+      // Save to database settings so frontend can use it
+      await axios.post('/api/admin/settings', { key: 'payment_paypal_client_id', value: clientId }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error("Failed to save PayPal config:", err);
+    }
   };
 
   const testConnection = async () => {

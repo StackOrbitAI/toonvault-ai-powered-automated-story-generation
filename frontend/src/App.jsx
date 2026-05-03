@@ -8,6 +8,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import Login from './components/Login';
 import ToonVaultUserDashboard from './components/ToonVaultUserDashboard';
 import Browse from './components/Browse';
+import BecomeCreator from './components/BecomeCreator';
 import './App.css';
 
 // Simple Protected Route
@@ -52,6 +53,7 @@ function App() {
           {/* Home Page */}
           <Route path="/" element={<ToonVaultHome />} />
           <Route path="/browse" element={<Browse />} />
+          <Route path="/creators" element={<BecomeCreator />} />
           
           {/* Public Reader */}
           <Route path="/story/:storyId" element={<Reader />} />

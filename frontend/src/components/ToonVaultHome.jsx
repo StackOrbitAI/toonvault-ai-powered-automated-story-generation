@@ -497,7 +497,7 @@ export default function ToonVaultHome() {
               background: isLoggedIn ? COLORS.plum : "transparent", borderRadius: 22, fontSize: 13,
               fontWeight: 600, color: isLoggedIn ? "white" : COLORS.plum, cursor: "pointer", whiteSpace: "nowrap"
             }}>{isLoggedIn ? "Dashboard" : "Log in"}</button>
-            <button className="desktop-only" onClick={() => setShowAIModal(true)} style={{
+            <button className="desktop-only" onClick={() => navigate('/creators')} style={{
               padding: "9px 20px", border: "none",
               background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.plumDark})`,
               borderRadius: 22, fontSize: 13, fontWeight: 600, color: "white",
@@ -545,7 +545,7 @@ export default function ToonVaultHome() {
                   background: isLoggedIn ? COLORS.plum : "transparent", borderRadius: 12, fontSize: 14,
                   fontWeight: 600, color: isLoggedIn ? "white" : COLORS.plum, cursor: "pointer",
                 }}>{isLoggedIn ? "Dashboard" : "Log in"}</button>
-                <button onClick={() => { setShowAIModal(true); setMobileMenuOpen(false); }} style={{
+                <button onClick={() => { navigate('/creators'); setMobileMenuOpen(false); }} style={{
                   padding: "14px", border: "none",
                   background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.plumDark})`,
                   borderRadius: 12, fontSize: 13, fontWeight: 700, color: "white",
@@ -607,7 +607,7 @@ export default function ToonVaultHome() {
                   padding: "12px 28px", background: "white", color: COLORS.plum,
                   border: "none", borderRadius: 24, fontSize: 14, fontWeight: 700, cursor: "pointer",
                 }}>▶ Start reading</button>
-                <button onClick={() => setShowAIModal(true)} style={{
+                <button onClick={() => navigate('/creators')} style={{
                   padding: "12px 24px", background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.rose})`,
                   color: "white", border: "none",
                   borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer",
