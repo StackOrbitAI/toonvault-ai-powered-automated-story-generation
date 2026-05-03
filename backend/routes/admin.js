@@ -103,7 +103,18 @@ router.get('/settings', auth, adminOnly, async (req, res) => {
                 { key: 'show_creator_popup', value: 'true', label: 'Show Creator Popup', type: 'boolean' },
                 { key: 'site_name', value: 'ToonVault', label: 'Site Name', type: 'text' },
                 { key: 'maintenance_mode', value: 'false', label: 'Maintenance Mode', type: 'boolean' },
-                { key: 'free_episode_interval_hrs', value: '3', label: 'Free Episode Interval (Hrs)', type: 'number' }
+                { key: 'free_episode_interval_hrs', value: '3', label: 'Free Episode Interval (Hrs)', type: 'number' },
+                // Social Auth Settings
+                { key: 'social_google_enabled', value: 'false', label: 'Google Login Enabled', type: 'boolean' },
+                { key: 'social_google_client_id', value: '', label: 'Google Client ID', type: 'text' },
+                { key: 'social_facebook_enabled', value: 'false', label: 'Facebook Login Enabled', type: 'boolean' },
+                { key: 'social_facebook_app_id', value: '', label: 'Facebook App ID', type: 'text' },
+                { key: 'social_instagram_enabled', value: 'false', label: 'Instagram Login Enabled', type: 'boolean' },
+                { key: 'social_linkedin_enabled', value: 'false', label: 'LinkedIn Login Enabled', type: 'boolean' },
+                // Email Settings
+                { key: 'email_verification_enabled', value: 'false', label: 'Email Verification Required', type: 'boolean' },
+                { key: 'email_provider_resend_key', value: '', label: 'Resend API Key', type: 'text' },
+                { key: 'email_from_address', value: 'noreply@toonvault.com', label: 'Email From Address', type: 'text' }
             ];
             await Setting.insertMany(defaults);
             settings = await Setting.find();

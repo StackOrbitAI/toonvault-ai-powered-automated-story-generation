@@ -339,13 +339,18 @@ export default function Login({ type = 'user' }) {
                      <span>Or continue with</span>
                      <div style={{ flex: 1, height: 1, background: C.cardBorder }} />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${[
+                       { id: 'social_google_enabled', name: 'Google', icon: <GoogleIcon />, color: '#EA4335' },
+                       { id: 'social_instagram_enabled', name: 'Instagram', icon: <Instagram size={20} />, color: '#E4405F' },
+                       { id: 'social_facebook_enabled', name: 'Facebook', icon: <Facebook size={20} />, color: '#1877F2' },
+                       { id: 'social_linkedin_enabled', name: 'LinkedIn', icon: <Linkedin size={20} />, color: '#0A66C2' }
+                     ].filter(s => settings[s.id] === 'true').length || 1}, 1fr)`, gap: 16 }}>
                      {[
-                       { name: 'Google', icon: <GoogleIcon />, color: '#EA4335' },
-                       { name: 'Instagram', icon: <Instagram size={20} />, color: '#E4405F' },
-                       { name: 'Facebook', icon: <Facebook size={20} />, color: '#1877F2' },
-                       { name: 'LinkedIn', icon: <Linkedin size={20} />, color: '#0A66C2' }
-                     ].map(s => (
+                       { id: 'social_google_enabled', name: 'Google', icon: <GoogleIcon />, color: '#EA4335' },
+                       { id: 'social_instagram_enabled', name: 'Instagram', icon: <Instagram size={20} />, color: '#E4405F' },
+                       { id: 'social_facebook_enabled', name: 'Facebook', icon: <Facebook size={20} />, color: '#1877F2' },
+                       { id: 'social_linkedin_enabled', name: 'LinkedIn', icon: <Linkedin size={20} />, color: '#0A66C2' }
+                     ].filter(s => settings[s.id] === 'true').map(s => (
                        <button key={s.name} type="button" style={{ 
                          height: 50, borderRadius: 16, background: '#131121', border: `1px solid ${C.cardBorder}`,
                          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s'

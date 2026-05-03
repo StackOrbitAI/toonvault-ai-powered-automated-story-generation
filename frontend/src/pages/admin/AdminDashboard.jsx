@@ -1412,6 +1412,34 @@ function SettingsPage({ user, onLogout }) {
           <div style={{ fontSize: 11, color: C.muted, marginTop: 10 }}>These prices reflect immediately on the frontend pricing table.</div>
         </div>
 
+        {/* Social Auth Settings */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 18 }}>🔑 Social Auth Settings</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ background: C.surface2, padding: "12px 16px", borderRadius: 12, border: `1px solid ${C.border}` }}>
+              <Toggle label="Enable Google Login" checked={getVal('social_google_enabled') === 'true'} onChange={v => updateSetting('social_google_enabled', v.toString())} />
+              <Input label="GOOGLE CLIENT ID" value={getVal('social_google_client_id') || ""} onChange={v => updateSetting('social_google_client_id', v)} icon="G" />
+            </div>
+            <div style={{ background: C.surface2, padding: "12px 16px", borderRadius: 12, border: `1px solid ${C.border}` }}>
+              <Toggle label="Enable Facebook Login" checked={getVal('social_facebook_enabled') === 'true'} onChange={v => updateSetting('social_facebook_enabled', v.toString())} />
+              <Input label="FACEBOOK APP ID" value={getVal('social_facebook_app_id') || ""} onChange={v => updateSetting('social_facebook_app_id', v)} icon="F" />
+            </div>
+          </div>
+        </div>
+
+        {/* Email Settings */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 18 }}>📧 Email & Verification</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <Toggle label="Require Email Verification" checked={getVal('email_verification_enabled') === 'true'} onChange={v => updateSetting('email_verification_enabled', v.toString())} />
+            <Input label="RESEND API KEY" value={getVal('email_provider_resend_key') || ""} onChange={v => updateSetting('email_provider_resend_key', v)} icon="🔑" type="password" />
+            <Input label="FROM EMAIL ADDRESS" value={getVal('email_from_address') || "noreply@toonvault.com"} onChange={v => updateSetting('email_from_address', v)} icon="📨" />
+          </div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 14 }}>
+            Recommended: Use <b>Resend.com</b> (3,000 free emails/mo) for reliable delivery.
+          </div>
+        </div>
+
         {/* Admin Profile */}
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "22px" }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 18 }}>👤 Admin Profile</div>
