@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight, ArrowLeft, Wand2, Palette, BookOpen, Check, X, Loader2, Rocket, Zap, Heart, Sword, Ghost } from 'lucide-react';
-import api from '../api';
+import { api } from '../api';
 
 const COLORS = {
   bg: "#050408",

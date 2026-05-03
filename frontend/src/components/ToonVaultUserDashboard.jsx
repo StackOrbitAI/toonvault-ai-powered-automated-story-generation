@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import api, { getStoredUser, logout } from "../api";
+import { api, getStoredUser, logout } from "../api";
 import AIStoryWizard from "./AIStoryWizard";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
