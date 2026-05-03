@@ -1607,6 +1607,7 @@ export default function ToonVaultUserDashboard() {
     else if (openParam === "ai") setPage("ai");
 
     if (promptParam) setInitialPrompt(promptParam);
+    if (params.get("wizard") === "true") setShowWizard(true);
 
     const token = localStorage.getItem("token");
     if (!token) { navigate("/user"); return; }

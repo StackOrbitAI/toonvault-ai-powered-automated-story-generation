@@ -1626,6 +1626,11 @@ export default function AdminDashboard() {
   const GENRES_LIST = ["Romance", "Fantasy", "Action", "Drama", "Sci-Fi", "Horror", "Comedy", "Slice of Life"];
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("page");
+    if (p) setPage(p);
+    if (params.get("wizard") === "true") setShowGenWizard(true);
+
     // Fetch initial API keys from backend
     axios.get("/api/admin/apikeys", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
       .then(res => {

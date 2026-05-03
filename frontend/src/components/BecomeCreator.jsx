@@ -40,11 +40,11 @@ export default function BecomeCreator() {
       return;
     }
     if (user) {
-      // Navigate to dashboard with AI Studio page active
-      navigate('/dashboard?page=ai');
+      // Navigate to dashboard with AI Studio page active and wizard open
+      navigate('/dashboard?page=ai&wizard=true');
     } else {
-      // Navigate to login/register with redirect back to AI Studio
-      navigate('/user?register=true&redirect=' + encodeURIComponent('/dashboard?page=ai'));
+      // Navigate to login/register with redirect back to AI Studio with wizard open
+      navigate('/user?register=true&redirect=' + encodeURIComponent('/dashboard?page=ai&wizard=true'));
     }
   };
 
