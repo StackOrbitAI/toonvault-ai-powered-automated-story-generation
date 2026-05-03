@@ -157,18 +157,21 @@ router.post('/generate', auth, async (req, res) => {
         const { title, description, panels: storyPanels } = aiOutput;
 
         // 2. Generate Images using Runware (FLUX.1 [schnell])
-        const runwareTasks = storyPanels.map((p, idx) => ({
-            taskType: "imageInference",
-            taskUUID: `panel-${idx}-${Date.now()}`,
-            model: process.env.RUNWARE_MODEL || "runware:31@1", // Flux Schnell
-            positivePrompt: `manga style, webtoon aesthetic, high quality, colorful, ${p.imagePrompt}`,
-            width: 512,
-            height: 768,
-            numberResults: 1,
-            outputFormat: "JPG",
-            CFGScale: 3.5,
-            steps: 4
-        }));
+        const runwareTasks = [
+            { taskType: "authentication", apiKey: process.env.RUNWARE_API_KEY },
+            ...storyPanels.map((p, idx) => ({
+                taskType: "imageInference",
+                taskUUID: `panel-${idx}-${Date.now()}`,
+                model: process.env.RUNWARE_MODEL || "runware:31@1", // Flux Schnell
+                positivePrompt: `manga style, webtoon aesthetic, high quality, colorful, ${p.imagePrompt}`,
+                width: 512,
+                height: 768,
+                numberResults: 1,
+                outputFormat: "JPG",
+                CFGScale: 3.5,
+                steps: 4
+            }))
+        ];
 
         const runwareResp = await axios.post('https://api.runware.ai/v1', runwareTasks, {
             headers: { 'Content-Type': 'application/json' }
