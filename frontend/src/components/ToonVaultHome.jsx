@@ -257,18 +257,33 @@ export default function ToonVaultHome() {
   }, []);
 
   useEffect(() => {
-    // Fetch all public settings
-    axios.get('/api/settings/public')
-      .then(r => {
-        setSettings(prev => ({ ...prev, ...r.data }));
-        if (r.data.show_creator_popup === 'true') {
-           setTimeout(() => setShowPopup(true), 2500);
-        }
-      })
-      .catch(() => {
-         // Fallback behavior if API fails or not set
-         setTimeout(() => setShowPopup(true), 6000);
-      });
+    // If user is logged in, never show the welcome/promo popup
+    if (!!localStorage.getItem("token")) return;
+
+    const lastShown = localStorage.getItem('last_popup_time');
+    const now = Date.now();
+    // 12 hours in milliseconds = 12 * 60 * 60 * 1000 = 43200000
+    const TWELVE_HOURS = 43200000;
+
+    if (!lastShown || (now - parseInt(lastShown, 10)) > TWELVE_HOURS) {
+      axios.get('/api/settings/public')
+        .then(r => {
+          setSettings(prev => ({ ...prev, ...r.data }));
+          if (r.data.show_creator_popup === 'true') {
+             setTimeout(() => {
+               setShowPopup(true);
+               localStorage.setItem('last_popup_time', Date.now().toString());
+             }, 2500);
+          }
+        })
+        .catch(() => {
+           // Fallback behavior if API fails or not set
+           setTimeout(() => {
+             setShowPopup(true);
+             localStorage.setItem('last_popup_time', Date.now().toString());
+           }, 6000);
+        });
+    }
   }, []);
 
   useEffect(() => {
@@ -340,14 +355,172 @@ export default function ToonVaultHome() {
     <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: COLORS.bg, minHeight: "100vh", color: COLORS.ink }}>
 
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        * { box-sizing: border-box; }
+
+        /* ── HERO RESPONSIVE ── */
+        .hero-container {
+          border-radius: 20px;
+          background: linear-gradient(135deg, #09080f 0%, #12102a 50%, #1c1035 100%);
+          min-height: 380px;
+          display: flex;
+          align-items: stretch;
+          overflow: hidden;
+          position: relative;
+          box-shadow: 0 30px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.06);
+        }
+        .hero-left {
+          flex: 0 0 420px;
+          padding: 40px 42px;
+          z-index: 2;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .hero-right {
+          flex: 1;
+          padding: 24px 32px 24px 24px;
+          display: flex;
+          gap: 16px;
+          z-index: 2;
+          position: relative;
+          min-width: 0;
+          align-items: center;
+        }
+        .hero-divider {
+          width: 1px;
+          background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.08) 70%, transparent);
+          flex-shrink: 0;
+        }
+        .hero-title {
+          font-size: 42px;
+          font-weight: 900;
+          color: white;
+          margin: 0 0 12px;
+          line-height: 1.08;
+          letter-spacing: -1.5px;
+        }
+        .hero-subtitle {
+          font-size: 14px;
+          color: rgba(255,255,255,0.55);
+          margin: 0 0 24px;
+          line-height: 1.6;
+          max-width: 380px;
+        }
+        .hero-cover {
+          width: 120px;
+          height: 280px;
+          flex-shrink: 0;
+          border-radius: 14px;
+          box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.07);
+          overflow: hidden;
+          align-self: center;
+          background-size: cover;
+          background-position: top center;
+        }
+        .hero-choices {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
+        }
+        .hero-cta-row {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 12px;
+        }
+        .hero-btn-primary {
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #7c3aed, #6d28d9);
+          color: white; border: none; border-radius: 10px;
+          font-size: 14px; font-weight: 700; cursor: pointer;
+          box-shadow: 0 6px 20px rgba(109,74,232,0.45);
+          transition: all 0.2s;
+          display: flex; align-items: center; gap: 6px;
+          font-family: inherit;
+          white-space: nowrap;
+        }
+        .hero-btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 24px rgba(109,74,232,0.55);
+        }
+        .hero-btn-secondary {
+          padding: 12px 20px;
+          background: rgba(255,255,255,0.06);
+          color: white;
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+          backdrop-filter: blur(10px);
+          transition: all 0.2s;
+          font-family: inherit;
+          white-space: nowrap;
+        }
+        .hero-btn-secondary:hover {
+          background: rgba(255,255,255,0.12);
+          border-color: rgba(255,255,255,0.35);
+        }
+        .hero-features {
+          display: flex;
+          gap: 14px;
+          flex-wrap: wrap;
+          padding-top: 16px;
+          border-top: 1px solid rgba(255,255,255,0.07);
+        }
+        .hero-choice-card {
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.035);
+          display: flex; gap: 10px; align-items: flex-start;
+          cursor: pointer;
+          transition: all 0.2s;
+          position: relative; overflow: hidden;
+        }
+        .hero-prompt-input {
+          flex: 1; padding: 8px 12px;
+          background: rgba(255,255,255,0.07);
+          border: 1px solid rgba(109,74,232,0.4);
+          border-radius: 8px; font-size: 12px;
+          color: white; outline: none;
+          transition: all 0.2s;
+          font-family: inherit;
+        }
+        .hero-prompt-input::placeholder { color: rgba(255,255,255,0.3); }
+        .hero-prompt-input:focus {
+          border-color: #7c3aed;
+          background: rgba(255,255,255,0.1);
+          box-shadow: 0 0 0 3px rgba(109,74,232,0.2);
+        }
+
+        @keyframes heroPulse {
+          0%, 100% { opacity: 1; box-shadow: 0 0 6px #a78bfa; }
+          50% { opacity: 0.6; box-shadow: 0 0 14px #a78bfa; }
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+
+        /* ── TABLET (900px) ── */
         @media (max-width: 900px) {
           .desktop-only { display: none !important; }
           .search-container { width: 100% !important; max-width: 140px !important; }
-          .hero-container { padding: 24px 16px !important; flex-direction: column !important; text-align: center !important; min-height: auto !important; gap: 20px !important; }
-          .hero-content { max-width: 100% !important; margin-bottom: 0 !important; display: flex !important; flex-direction: column !important; align-items: center !important; }
-          .hero-image { position: relative !important; right: auto !important; top: auto !important; bottom: auto !important; width: 100% !important; max-width: 140px !important; margin: 0 auto !important; order: -1 !important; transform: none !important; height: 180px !important; }
-          .hero-title { font-size: 22px !important; line-height: 1.2 !important; margin-bottom: 8px !important; }
-          .hero-subtitle { font-size: 13px !important; margin-bottom: 12px !important; }
+          .hero-container { flex-direction: column !important; min-height: auto !important; border-radius: 16px !important; }
+          .hero-left { flex: none !important; padding: 32px 24px 20px !important; align-items: center !important; text-align: center !important; }
+          .hero-right { flex: none !important; padding: 0 20px 24px !important; flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+          .hero-divider { display: none !important; }
+          .hero-title { font-size: 32px !important; letter-spacing: -1px !important; margin-bottom: 12px !important; }
+          .hero-subtitle { font-size: 13px !important; margin-bottom: 20px !important; text-align: center !important; max-width: 100% !important; }
+          .hero-cover { width: 100% !important; height: 160px !important; border-radius: 12px !important; background-position: center top !important; }
+          .hero-cta-row { justify-content: center !important; }
+          .hero-features { justify-content: center !important; gap: 10px !important; }
+          .hero-choices { gap: 6px !important; }
+          .hero-btn-primary { font-size: 13px !important; padding: 12px 24px !important; }
+          .hero-btn-secondary { font-size: 13px !important; padding: 12px 20px !important; }
           .collections-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
           .schedule-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
           .day-selector { flex-wrap: nowrap !important; overflow-x: auto !important; padding-bottom: 10px !important; -webkit-overflow-scrolling: touch !important; }
@@ -357,12 +530,21 @@ export default function ToonVaultHome() {
           .section-title { font-size: 18px !important; }
           .fab-button { width: 44px !important; height: 44px !important; bottom: 20px !important; right: 20px !important; font-size: 20px !important; }
         }
+
+        /* ── MOBILE (480px) ── */
+        @media (max-width: 480px) {
+          .hero-left { padding: 24px 16px 16px !important; }
+          .hero-right { padding: 0 16px 20px !important; }
+          .hero-title { font-size: 26px !important; }
+          .hero-subtitle { font-size: 12px !important; }
+          .hero-cover { height: 140px !important; }
+          .hero-btn-primary, .hero-btn-secondary { width: 100% !important; justify-content: center !important; }
+          .hero-cta-row { flex-direction: column !important; gap: 8px !important; }
+          .hero-features { display: none !important; } /* Hide feature pills on mobile to save space */
+        }
+
         @media (min-width: 901px) {
           .mobile-only { display: none !important; }
-        }
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
         }
       `}</style>
 
@@ -506,12 +688,12 @@ export default function ToonVaultHome() {
               fontWeight: 600, color: isLoggedIn ? "white" : COLORS.plum, cursor: "pointer", whiteSpace: "nowrap"
             }}>{isLoggedIn ? "Dashboard" : "Log in"}</button>
             <button className="desktop-only" onClick={() => navigate('/creators')} style={{
-              padding: "9px 20px", border: "none",
-              background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.plumDark})`,
-              borderRadius: 22, fontSize: 13, fontWeight: 600, color: "white",
-              cursor: "pointer", boxShadow: "0 2px 10px rgba(109,74,232,0.3)",
+              padding: "9px 20px", border: `1.5px solid ${COLORS.plum}`,
+              background: "transparent",
+              borderRadius: 22, fontSize: 13, fontWeight: 600, color: COLORS.plum,
+              cursor: "pointer",
               display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"
-            }}><span>✨</span> Become Creator</button>
+            }}><span>✏️</span> Write a Story</button>
 
             <div className="mobile-only">
               <button onClick={() => setMobileMenuOpen(true)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: COLORS.ink }}>☰</button>
@@ -586,65 +768,211 @@ export default function ToonVaultHome() {
 
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
 
-        {/* ═══ HERO CAROUSEL ═══ */}
-        <div style={{ padding: "24px 0 32px", position: "relative" }}>
-          <div className="hero-container" style={{
-            borderRadius: 24,
-            background: featured.bg,
-            padding: "48px 56px",
-            minHeight: 380,
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            overflow: "hidden", position: "relative", transition: "all 0.6s",
-          }}>
-            <div className="hero-content" style={{ maxWidth: 480, zIndex: 2, position: "relative" }}>
-              <span style={{
-                display: "inline-block",
-                background: "rgba(255,255,255,0.2)", color: "white",
-                fontSize: 11, fontWeight: 700, padding: "4px 12px", borderRadius: 12,
-                letterSpacing: 1, marginBottom: 14, backdropFilter: "blur(8px)",
-              }}>{featured.badge}</span>
-              <h1 className="hero-title" style={{ fontSize: 36, fontWeight: 800, color: "white", margin: "0 0 10px", lineHeight: 1.2, letterSpacing: -0.5 }}>{featured.title}</h1>
-              <p className="hero-subtitle" style={{ fontSize: 16, color: "rgba(255,255,255,0.82)", margin: "0 0 8px", lineHeight: 1.6 }}>{featured.subtitle}</p>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", margin: "0 0 28px" }}>{featured.genre}</p>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "inherit" }}>
-                <button onClick={() => {
-                  const story = liveStories.find(s => s.title === featured.title);
-                  if (story) navigate(`/story/${story.id}`);
-                  else navigate(`/story/1`);
-                }} style={{
-                  padding: "12px 28px", background: "white", color: COLORS.plum,
-                  border: "none", borderRadius: 24, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                }}>▶ Start reading</button>
-                <button onClick={() => navigate('/creators')} style={{
-                  padding: "12px 24px", background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.rose})`,
-                  color: "white", border: "none",
-                  borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer",
-                  boxShadow: "0 4px 14px rgba(232,106,138,0.4)",
-                  display: "flex", alignItems: "center", gap: 8
-                }}><span>✨</span> Become ToonVault Creator</button>
+        {/* \u2550\u2550\u2550 HERO \u2550\u2550\u2550 */}
+        <div style={{ padding: "28px 0 40px" }}>
+          <div className="hero-container">
+
+            {/* \u2500\u2500 Ambient glow blobs \u2500\u2500 */}
+            <div style={{ position: "absolute", left: -80, top: -80, width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(109,74,232,0.22) 0%, transparent 65%)", zIndex: 0, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", right: 60, bottom: -100, width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 65%)", zIndex: 0, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", right: -40, top: -40, width: 280, height: 280, borderRadius: "50%", background: "radial-gradient(circle, rgba(16,185,129,0.09) 0%, transparent 70%)", zIndex: 0, pointerEvents: "none" }} />
+
+            {/* \u2500\u2500 LEFT PANEL \u2500\u2500 */}
+            <div className="hero-left">
+
+              {/* Eyebrow badge */}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(109,74,232,0.15)", border: "1px solid rgba(109,74,232,0.35)", borderRadius: 100, padding: "5px 14px", marginBottom: 24, width: "fit-content" }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#a78bfa", animation: "heroPulse 2.4s ease-in-out infinite" }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#c4b5fd", letterSpacing: 1.5, textTransform: "uppercase" }}>Interactive Storytelling</span>
+              </div>
+
+              {/* Headline */}
+              <h1 className="hero-title">
+                Unlock what<br />
+                happens{" "}
+                <span style={{
+                  backgroundImage: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  fontStyle: "italic",
+                }}>next.</span>
+              </h1>
+
+              {/* Subtitle */}
+              <p className="hero-subtitle">
+                Read visual stories shaped by{" "}
+                <strong style={{ color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>your choices</strong>.
+                {" "}Choose the next scene, follow rising storylines, or write your own chapter.
+              </p>
+
+              {/* CTA buttons */}
+              <div className="hero-cta-row">
+                <button
+                  id="hero-start-reading"
+                  className="hero-btn-primary"
+                  onClick={() => navigate('/browse')}
+                >
+                  <span>▶</span> Start Reading
+                </button>
+                <button
+                  id="hero-create-story"
+                  className="hero-btn-secondary"
+                  onClick={() => setShowAIModal(true)}
+                >
+                  ✍️ Write a Story
+                </button>
+              </div>
+
+              {/* Money micro-note */}
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", margin: "0 0 28px", fontStyle: "italic" }}>
+                💡 Write a story readers love — and you might earn from it.
+              </p>
+
+              {/* Feature pills */}
+              <div className="hero-features">
+                {[
+                  { icon: "📖", label: "Choose", sub: "next scene" },
+                  { icon: "📈", label: "Follow", sub: "storylines" },
+                  { icon: "✏️", label: "Create", sub: "your chapter" },
+                  { icon: "🧰", label: "Collect", sub: "in Vault" },
+                ].map((f, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>{f.icon}</div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", lineHeight: 1.2 }}>{f.label}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{f.sub}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="hero-image" style={{ position: "absolute", right: 60, top: "10%", bottom: "10%", width: 280, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
-              {String(featured.cover || "").trim().includes("http") ? (
-                <img src={String(featured.cover).trim()} style={{ height: "100%", borderRadius: 16, boxShadow: "0 20px 40px rgba(0,0,0,0.3)", transform: "rotate(3deg)" }} />
-              ) : (
-                <div style={{ fontSize: 120, opacity: 0.4, filter: "blur(1px)" }}>{featured.cover}</div>
-              )}
-            </div>
-            <div style={{ position: "absolute", right: 180, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
-            <div style={{ position: "absolute", right: 100, bottom: -60, width: 260, height: 260, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
-          </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, justifyContent: "center" }}>
-            {featuredStories.map((f, i) => (
-              <button key={i} onClick={() => setHeroIndex(i)} style={{
-                width: i === heroIndex ? 28 : 8, height: 8,
-                borderRadius: 6, border: "none", cursor: "pointer", transition: "all 0.3s",
-                background: i === heroIndex ? COLORS.plum : COLORS.border,
-              }} />
-            ))}
+            {/* \u2500\u2500 Vertical divider (desktop only) \u2500\u2500 */}
+            <div className="hero-divider" />
+
+            {/* \u2500\u2500 RIGHT PANEL \u2500\u2500 */}
+            <div className="hero-right">
+
+              {/* Story cover image */}
+              <div
+                className="hero-cover"
+                style={{
+                  background: featured.cover && (featured.cover.startsWith('http') || featured.cover.startsWith('/'))
+                    ? `url(${featured.cover}) top center / cover no-repeat`
+                    : "url(https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=600&auto=format&fit=crop) center center / cover no-repeat",
+                }}
+              >
+                {(!featured.cover || (!featured.cover.startsWith('http') && !featured.cover.startsWith('/'))) && (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, background: "rgba(0,0,0,0.5)", color: "white" }}>
+                    {featured.cover || "✨"}
+                  </div>
+                )}
+              </div>
+
+              {/* Choice cards column */}
+              <div className="hero-choices">
+
+                {/* Column label */}
+                <div style={{ marginBottom: 4 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", letterSpacing: 1.5, textTransform: "uppercase" }}>Where will you take the story?</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {featured.title || "ToonVault Originals"}
+                  </div>
+                </div>
+
+                {/* A/B/C choices */}
+                {[
+                  { id: "A", title: "Follow the Whisper",  desc: "Uncover the hidden truth before it's too late.",  tags: ["Romance", "Mystery"],    color: "#7c3aed", votes: 62, popular: true },
+                  { id: "B", title: "Trust the Stranger",  desc: "Take the risk and step into the unknown.",          tags: ["Drama",   "Suspense"],   color: "#e8336d", votes: 45 },
+                  { id: "C", title: "Leave It Behind",     desc: "Walk away — before it changes everything.",        tags: ["Adventure","Fantasy"],  color: "#10b981", votes: 33 },
+                ].map(c => (
+                  <div
+                    key={c.id}
+                    id={`hero-choice-${c.id.toLowerCase()}`}
+                    className="hero-choice-card"
+                    style={{ border: `1px solid ${c.color}30` }}
+                    onClick={() => navigate('/browse')}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = `${c.color}18`;
+                      e.currentTarget.style.borderColor = `${c.color}60`;
+                      e.currentTarget.style.transform = "translateX(4px)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.035)";
+                      e.currentTarget.style.borderColor = `${c.color}30`;
+                      e.currentTarget.style.transform = "none";
+                    }}
+                  >
+                    {c.popular && (
+                      <div style={{ position: "absolute", top: 0, right: 0, background: "#d79a2b", color: "white", fontSize: 8, fontWeight: 900, padding: "2px 8px", borderBottomLeftRadius: 8, letterSpacing: 0.8 }}>POPULAR</div>
+                    )}
+                    <div style={{ width: 26, height: 26, borderRadius: 8, background: c.color, color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, flexShrink: 0, boxShadow: `0 4px 10px ${c.color}55` }}>{c.id}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "white", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 6, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.desc}</div>
+                      {/* Vote bar */}
+                      <div style={{ height: 3, borderRadius: 4, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+                        <div style={{ width: `${c.votes}%`, height: "100%", borderRadius: 4, background: `linear-gradient(90deg, ${c.color}, ${c.color}99)` }} />
+                      </div>
+                      <div style={{ display: "flex", gap: 5, marginTop: 6, flexWrap: "wrap" }}>
+                        {c.tags.map(tag => (
+                          <span key={tag} style={{ fontSize: 9, fontWeight: 600, background: `${c.color}22`, color: c.color, padding: "2px 7px", borderRadius: 6 }}>{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 14, color: "rgba(255,255,255,0.25)", alignSelf: "center", flexShrink: 0 }}>›</div>
+                  </div>
+                ))}
+
+                {/* D — Write Your Own (FUNCTIONAL) */}
+                <div
+                  id="hero-write-own"
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    background: "linear-gradient(135deg, rgba(109,74,232,0.1), rgba(109,74,232,0.04))",
+                    border: "1px dashed rgba(109,74,232,0.45)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(109,74,232,0.25)", color: "#c4b5fd", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12, flexShrink: 0 }}>D</div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: "#c4b5fd" }}>Write Your Own Story</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.38)" }}>Create your own twist — you decide what happens next.</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input
+                      id="hero-prompt-input"
+                      type="text"
+                      value={aiPrompt}
+                      onChange={e => setAiPrompt(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') setShowAIModal(true); }}
+                      placeholder="Type your story idea..."
+                      className="hero-prompt-input"
+                    />
+                    <button
+                      id="hero-prompt-submit"
+                      onClick={() => setShowAIModal(true)}
+                      style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                        border: "none", color: "white", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 15, transition: "transform 0.15s",
+                        boxShadow: "0 4px 12px rgba(109,74,232,0.5)",
+                        fontFamily: "inherit",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "none"}
+                    >✏️</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+
 
         {/* ═══ ANNOUNCEMENT BANNERS ═══ */}
         <div className="banner-container" style={{ display: "flex", gap: 12, marginBottom: 36, overflowX: "auto", scrollbarWidth: "none" }}>
@@ -907,9 +1235,9 @@ export default function ToonVaultHome() {
             <div style={{ position: "relative", zIndex: 1 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.rose, letterSpacing: 1.5, textTransform: "uppercase", display: "block", marginBottom: 10 }}>Creators 101</span>
               <h3 style={{ fontSize: 26, fontWeight: 800, color: "white", margin: "0 0 10px", lineHeight: 1.2 }}>Publish your story.<br />Own your world.</h3>
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", margin: "0 0 24px", lineHeight: 1.7, maxWidth: 420 }}>Build branching interactive stories, grow a fanbase, and earn royalties. ToonVault's creator tools are built for writers who take storytelling seriously.</p>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", margin: "0 0 24px", lineHeight: 1.7, maxWidth: 420 }}>Build branching interactive stories and grow a fanbase. ToonVault's creator tools are built for writers who take storytelling seriously.</p>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {["✏️ Start writing", "👥 Build a team", "📊 Earn royalties"].map((f, i) => (
+                {["✏️ Start writing", "👥 Build a team", "📖 Map your story"].map((f, i) => (
                   <span key={i} style={{
                     fontSize: 13, color: "rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.1)",
                     padding: "6px 14px", borderRadius: 16,
@@ -1086,7 +1414,7 @@ export default function ToonVaultHome() {
                   { l: "Creators 101", t: "#creators" },
                   { l: "Team features", t: "#creators" },
                   { l: "Creator tools", t: "#creators" },
-                  { l: "Earnings", t: "/dashboard" }
+                  { l: "Analytics", t: "/dashboard" }
                 ] 
               },
               { 
@@ -1192,7 +1520,7 @@ export default function ToonVaultHome() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28, textAlign: "left" }}>
                 {[
-                  { icon: "💰", title: "Monetize Day One", desc: "Earn royalties now." },
+                  { icon: "✨", title: "Creative Freedom", desc: "Build whatever you want." },
                   { icon: "🎨", title: "AI Panels", desc: "Generate art with AI." },
                   { icon: "👥", title: "Global Reach", desc: "Reach millions instantly." },
                   { icon: "📊", title: "Live Analytics", desc: "Track your story growth." }
