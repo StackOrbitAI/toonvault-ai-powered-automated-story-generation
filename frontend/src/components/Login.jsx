@@ -52,7 +52,14 @@ export default function Login({ type = 'user' }) {
       try {
         const u = JSON.parse(user);
         if (u && u.id) {
-          navigate('/dashboard');
+          const params = new URLSearchParams(location.search);
+          const intent = params.get('intent');
+          const redirect = params.get('redirect');
+          if (intent === 'write') {
+            navigate('/?intent=write');
+          } else {
+            navigate(redirect || '/dashboard');
+          }
           return;
         }
       } catch (e) {}
@@ -111,8 +118,13 @@ export default function Login({ type = 'user' }) {
       localStorage.setItem('user', JSON.stringify(user));
       
       const params = new URLSearchParams(location.search);
+      const intent = params.get('intent');
       const redirect = params.get('redirect');
-      navigate(redirect || '/dashboard');
+      if (intent === 'write') {
+        navigate('/?intent=write');
+      } else {
+        navigate(redirect || '/dashboard');
+      }
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Authentication error.');
     } finally {

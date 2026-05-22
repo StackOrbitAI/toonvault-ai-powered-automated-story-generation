@@ -75,7 +75,10 @@ export default function MantaReader() {
     window.scrollTo(0, 0);
   }, [storyId, epNum]);
 
-  const [consentGiven, setConsentGiven] = useState(localStorage.getItem('tv_mature_consent') === 'true');
+  const [consentGiven, setConsentGiven] = useState(
+    localStorage.getItem('age_consent') === 'true' || 
+    localStorage.getItem('tv_mature_consent') === 'true'
+  );
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isAdult = user.age >= 18;
 
@@ -139,62 +142,66 @@ export default function MantaReader() {
 
       {/* ═══ MAIN VIEWER ═══ */}
       <main style={{ maxWidth: 800, margin: "0 auto", paddingTop: 60 }}>
-        {story.genre?.toLowerCase() === 'mature' && !consentGiven && !isAdult ? (
-          <div style={{ padding: "100px 40px", textAlign: "center", minHeight: "70vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(232, 106, 138, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-              <ShieldAlert size={40} color={COLORS.rose} />
-            </div>
-            <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 16 }}>Mature Content</h2>
-            <p style={{ color: COLORS.textMuted, fontSize: 16, lineHeight: 1.6, maxWidth: 400, marginBottom: 32 }}>
-              This story contains mature themes and is intended for adult audiences. Please confirm you are over 18 to continue.
-            </p>
-            <div style={{ display: "flex", gap: 16 }}>
-              <button 
-                onClick={() => navigate('/')}
-                style={{ padding: "14px 30px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "none", color: "white", fontWeight: 700, cursor: "pointer" }}
-              >Go Back</button>
-              <button 
-                onClick={() => {
-                  setConsentGiven(true);
-                  localStorage.setItem('tv_mature_consent', 'true');
-                }}
-                style={{ padding: "14px 30px", borderRadius: 12, border: "none", background: COLORS.rose, color: "white", fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 20px rgba(232,106,138,0.3)" }}
-              >I am 18 or older</button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {story.displayPanels?.map((url, i) => (
-              <div key={i} style={{ width: "100%", marginBottom: 0 }}>
-                <img
-                  src={url}
-                  alt={`Panel ${i + 1}`}
-                  style={{ width: "100%", height: "auto", display: "block" }}
-                />
-                
-                {/* Content Overlay */}
-                {story.displayContent && (
-                  (() => {
-                    try {
-                      const contentArr = JSON.parse(story.displayContent);
-                      const panelData = contentArr[i];
-                      if (panelData && panelData.text) {
-                        return (
-                          <div style={{
-                            padding: "30px 24px", textAlign: "center", background: "#000",
-                            color: "white", fontSize: 17, lineHeight: 1.7, fontWeight: 400
-                          }}>
-                            {panelData.text}
-                          </div>
-                        );
-                      }
-                    } catch(e) { return null; }
-                  })()
-                )}
+        <div style={{ display: "flex", flexDirection: "column", position: "relative" }}>
+          {story.genre?.toLowerCase() === 'mature' && !consentGiven && !isAdult && (
+            <div style={{ position: "absolute", inset: 0, zIndex: 10, backdropFilter: "blur(40px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(5, 4, 8, 0.7)" }}>
+              <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(232, 106, 138, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
+                <ShieldAlert size={40} color={COLORS.rose} />
               </div>
-            ))}
-          </div>
-        )}
+              <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 16 }}>Mature Content</h2>
+              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, lineHeight: 1.6, maxWidth: 400, marginBottom: 32, textAlign: "center" }}>
+                This story contains mature themes. Please confirm you are over 18 to continue reading these panels.
+              </p>
+              <div style={{ display: "flex", gap: 16 }}>
+                <button 
+                  onClick={() => navigate(-1)}
+                  style={{ padding: "14px 30px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "none", color: "white", fontWeight: 700, cursor: "pointer" }}
+                >Go Back</button>
+                <button 
+                  onClick={() => {
+                    setConsentGiven(true);
+                    localStorage.setItem('age_consent', 'true');
+                    localStorage.setItem('tv_mature_consent', 'true');
+                  }}
+                  style={{ padding: "14px 30px", borderRadius: 12, border: "none", background: COLORS.rose, color: "white", fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 20px rgba(232,106,138,0.3)" }}
+                >I am 18 or older</button>
+              </div>
+            </div>
+          )}
+          {story.displayPanels?.map((url, i) => (
+            <div key={i} style={{ width: "100%", marginBottom: 0, position: "relative", filter: story.genre?.toLowerCase() === 'mature' && !consentGiven && !isAdult ? "blur(20px)" : "none", transition: "filter 0.5s" }}>
+              <img
+                src={url}
+                alt={`Panel ${i + 1}`}
+                style={{ width: "100%", height: "auto", display: "block" }}
+              />
+              
+              {/* Content Overlay */}
+              {story.displayContent && (
+                (() => {
+                  try {
+                    const contentArr = JSON.parse(story.displayContent);
+                    const panelData = contentArr[i];
+                    if (panelData && panelData.text) {
+                      return (
+                        <div style={{
+                          position: "absolute", bottom: 24, left: 24, right: 24,
+                          padding: "16px 24px", textAlign: "center", 
+                          background: "rgba(0, 0, 0, 0.75)", backdropFilter: "blur(8px)",
+                          borderRadius: 20, border: "1px solid rgba(255,255,255,0.1)",
+                          color: "white", fontSize: 17, lineHeight: 1.5, fontWeight: 500,
+                          boxShadow: "0 10px 40px rgba(0,0,0,0.6)"
+                        }}>
+                          {panelData.text}
+                        </div>
+                      );
+                    }
+                  } catch(e) { return null; }
+                })()
+              )}
+            </div>
+          ))}
+        </div>
         
         {/* ═══ INTERACTIVE CHOICES (PROFESSIONAL) ═══ */}
         <div style={{ 

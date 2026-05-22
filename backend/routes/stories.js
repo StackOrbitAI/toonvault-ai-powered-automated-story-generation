@@ -158,11 +158,11 @@ router.post('/generate', auth, async (req, res) => {
     try {
         const systemPrompt = category === "Quotes" 
             ? "You are a world-class creator of aesthetic wisdom. Your output MUST be a JSON object with: title, description, and an array 'panels' (length 5). Each panel must have 'text' (a profound quote) and 'imagePrompt' (unique, minimalist cinematic photography for Flux, each with a different setting)."
-            : "You are an elite Manhwa (webtoon) writer. Your output MUST be a JSON object with: title, description, and an array 'panels' (length 10). CRITICAL: Every panel must have a unique, distinct 'imagePrompt' that varies in composition (wide shots, close-ups, action poses) and environment to ensure a dynamic visual flow. Avoid visual repetition.";
+            : "You are an elite Manhwa (webtoon) writer. Your output MUST be a JSON object with: title, description, and an array 'panels' (length 10). CRITICAL: Write for a seamless vertical scroll format. Use very short, punchy dialogue. Every panel must have a unique, distinct 'imagePrompt' (establishing shots, extreme close-ups, dynamic action) to ensure a professional Webtoon flow. Avoid visual repetition.";
 
         const userPrompt = category === "Quotes"
             ? `Curate a masterpiece collection of 5 deep, aesthetic quotes focused on: "${topic}". Theme details: ${prompt || 'Universal wisdom'}. Ensure the quotes are unique and impactful.`
-            : `Draft a high-stakes, professionally structured 10-panel Manhwa pilot episode about: "${topic}". Tone: Dramatic, High-Fantasy, Epic. Plot hooks: ${prompt || 'A fateful encounter'}. Focus on visual storytelling, dynamic action, and emotional tension.`;
+            : `Draft a high-stakes, professionally structured 10-panel Webtoon/Manhwa pilot episode about: "${topic}". Tone: Dramatic, High-Fantasy, Epic. Plot hooks: ${prompt || 'A fateful encounter'}. Focus on cinematic visual storytelling, fast pacing, and emotional tension.`;
 
         // 1. Generate Narrative & Prompts using Mistral
         const mistralResp = await axios.post('https://api.mistral.ai/v1/chat/completions', {
@@ -194,7 +194,7 @@ router.post('/generate', auth, async (req, res) => {
                     model: "civitai:257749@290640", 
                     positivePrompt: category === "Quotes" 
                         ? `masterpiece, minimalist aesthetic, cinematic photography, high contrast, clean, elegant, ${p.imagePrompt}`
-                        : `score_9, score_8_up, score_7_up, masterpiece, best quality, beautiful manhwa style, dramatic webtoon aesthetic, rich vibrant colors, safe for work, ${p.imagePrompt}`,
+                        : `score_9, score_8_up, score_7_up, masterpiece, best quality, beautiful manhwa style, official webtoon art, seamless vertical scroll style, dramatic lighting, highly detailed, safe for work, ${p.imagePrompt}`,
                     width: 512,
                     height: 768,
                     numberResults: 1,
@@ -311,7 +311,7 @@ router.post('/generate-episode', auth, async (req, res) => {
             model: "mistral-small-latest",
             messages: [{
                 role: "system",
-                content: "You are a professional Manhwa scriptwriter specializing in high-tension drama and fantasy. Your task is to write the NEXT episode of an existing series. Ensure narrative continuity, character development, and emotional impact. Output ONLY a JSON object with: episodeTitle, and an array 'panels' (length 10) where each item has 'text' (dialogue/narration) and 'imagePrompt' (detailed cinematic description for the artist). CRITICAL: Every panel must have a unique, distinct 'imagePrompt' that varies in composition."
+                content: "You are a professional Manhwa scriptwriter specializing in high-tension drama and fantasy. Your task is to write the NEXT episode of an existing series. Ensure narrative continuity, character development, and emotional impact. Output ONLY a JSON object with: episodeTitle, and an array 'panels' (length 10) where each item has 'text' (short punchy dialogue) and 'imagePrompt' (detailed cinematic description). CRITICAL: Write for a seamless vertical scroll format. Every panel must have a unique, distinct 'imagePrompt' that varies in composition."
             }, {
                 role: "user",
                 content: context
@@ -334,7 +334,7 @@ router.post('/generate-episode', auth, async (req, res) => {
                     taskType: "imageInference",
                     taskUUID: crypto.randomUUID(),
                     model: "civitai:257749@290640",
-                    positivePrompt: `score_9, score_8_up, score_7_up, masterpiece, best quality, beautiful manhwa style, dramatic webtoon aesthetic, rich vibrant colors, safe for work, ${p.imagePrompt}`,
+                    positivePrompt: `score_9, score_8_up, score_7_up, masterpiece, best quality, beautiful manhwa style, official webtoon art, seamless vertical scroll style, dramatic lighting, highly detailed, safe for work, ${p.imagePrompt}`,
                     width: 512,
                     height: 768,
                     numberResults: 1,

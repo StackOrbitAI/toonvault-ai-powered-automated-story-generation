@@ -76,7 +76,7 @@ export default function BecomeCreator() {
     <div style={{ background: C.bg, color: C.text, minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
       <Helmet>
         <title>Become a Creator | ToonVault — Share Your Story</title>
-        <meta name="description" content="Join the ToonVault creator community. Use AI tools to create comics and stories, reach a global audience, and earn revenue." />
+        <meta name="description" content="Join the ToonVault creator community. Use AI tools to create comics and stories, and reach a global audience." />
       </Helmet>
 
       {/* Navigation Header */}
@@ -110,7 +110,7 @@ export default function BecomeCreator() {
             The world's first choice-driven narrative platform. Create high-quality interactive comics and novels with AI assistance.
           </p>
           <div style={{ fontSize: 13, color: C.textDim, background: 'rgba(255,255,255,0.03)', padding: '12px 24px', borderRadius: 16, display: 'inline-block', marginBottom: 40, border: `1px solid ${C.cardBorder}` }}>
-            💡 <b>Note:</b> If your story gains high engagement, you may be eligible for monetization in the future.
+            💡 <b>Note:</b> If your story gains high engagement and sells, you might be able to make money in the future.
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
             <button onClick={() => {
@@ -164,7 +164,7 @@ export default function BecomeCreator() {
         }}>
           <h2 style={{ fontSize: 36, fontWeight: 900, marginBottom: 24 }}>Ready to Write Story?</h2>
           <p style={{ color: C.textDim, maxWidth: 600, margin: '0 auto 40px' }}>
-            By becoming a creator, you agree to our Platform Terms, Content Guidelines, and Revenue Share agreements.
+            By becoming a creator, you agree to our Platform Terms and Content Guidelines.
           </p>
 
           <div style={{ 
@@ -219,7 +219,7 @@ export default function BecomeCreator() {
                 <span style={{ fontSize: 22, fontWeight: 900, color: "white", letterSpacing: -0.8 }}>Toon<span style={{ color: C.rose }}>Vault</span></span>
               </div>
               <p style={{ fontSize: 14, lineHeight: 1.8, maxWidth: 300, color: "rgba(255,255,255,0.5)" }}>
-                An AI-powered interactive storytelling platform where choices shape every story. Create, share, and monetize your imagination.
+                An AI-powered interactive storytelling platform where choices shape every story. Create and share your imagination.
               </p>
             </div>
             {[

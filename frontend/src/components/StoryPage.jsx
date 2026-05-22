@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Bookmark, Heart, Share2, Play, Users, Star, ChevronRight, AlertTriangle, Info, Clock, BookOpen, Map as MapIcon
+  ArrowLeft, Bookmark, Heart, Share2, Play, Users, Star, ChevronRight, AlertTriangle, Info, Clock, BookOpen, Map as MapIcon, Check
 } from 'lucide-react';
 import StoryMap from './StoryMap';
+import axios from 'axios';
 
 /* 
   NOTE: For Runware.ai integration, you can use their SDK or REST API.
@@ -41,26 +42,112 @@ export default function StoryPage({ stories = [], user }) {
   const [followed, setFollowed] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [activeTab, setActiveTab] = useState('episodes'); // episodes | about | characters | map
+  const [story, setStory] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Find story or use fallback
-  const story = stories.find(s => String(s.id) === id) || {
-    id: id,
-    title: id === '69f7365c1cd954ae93abb532' ? "The Lemon Forest" : "The Silent Crown",
-    logline: id === '69f7365c1cd954ae93abb532' 
-      ? "A mystical journey through a forest where lemons glow with ancient magic and secrets are hidden in the peel."
-      : "A voiceless princess must reclaim her throne with nothing but courage—and the spy she should never trust.",
-    image: id === '69f7365c1cd954ae93abb532' 
-      ? "/src/assets/lemon_forest.png"
-      : "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=600&q=80",
-    tags: ['Fantasy', 'Adventure', 'Magic'], 
-    tagTypes: ['tag-genre', 'tag-teal', 'tag-mood'],
-    rating: 'PG', 
-    genre: 'Fantasy', 
-    episodes: 15, 
-    completion: 45,
-    readers: '12.5K',
-    score: 4.9
-  };
+  useEffect(() => {
+    const fetchStoryDetails = async () => {
+      try {
+        const res = await axios.get(`/api/stories/${id}`);
+        const s = res.data;
+        // Map backend schema to what StoryPage expects
+        const mappedStory = {
+          id: s._id,
+          title: s.title,
+          logline: s.description || "No description available.",
+          image: s.panels && s.panels.length > 0 ? s.panels[0] : (s.coverIcon || "📖"),
+          tags: s.genre ? [s.genre] : ['Fantasy'],
+          tagTypes: ['tag-genre'],
+          rating: s.genre?.toLowerCase() === 'mature' ? 'R' : 'PG',
+          genre: s.genre || 'Fantasy',
+          episodes: s.episodes && s.episodes.length > 0 ? s.episodes.length + 1 : 1,
+          completion: s.status === 'Live' ? 100 : 50,
+          readers: s.views > 1000 ? (s.views / 1000).toFixed(1) + 'K' : s.views || '1.2K',
+          score: s.rating || 4.9,
+          nodes: s.nodes || [],
+          currentNodeId: s.nodes && s.nodes.length > 0 ? s.nodes[s.nodes.length - 1].id : 's4',
+          dbEpisodes: s.episodes || []
+        };
+        setStory(mappedStory);
+      } catch (err) {
+        console.warn("Could not fetch story from backend. Falling back to local data.", err.message);
+        // Fallback to local search in stories prop
+        const localStory = stories.find(s => String(s.id) === id);
+        if (localStory) {
+          setStory({
+            id: localStory.id,
+            title: localStory.title,
+            logline: localStory.description || "A mystical story in ToonVault.",
+            image: localStory.image || "/src/assets/lemon_forest.png",
+            tags: localStory.tags || ['Fantasy'],
+            tagTypes: ['tag-genre'],
+            rating: 'PG',
+            genre: localStory.genre || 'Fantasy',
+            episodes: localStory.episodes || 1,
+            completion: 45,
+            readers: '12.5K',
+            score: localStory.score || 4.9,
+            nodes: localStory.nodes || [],
+            currentNodeId: 's4'
+          });
+        } else {
+          // Absolute fallback
+          setStory({
+            id: id,
+            title: id === '69f7365c1cd954ae93abb532' ? "The Lemon Forest" : "The Silent Crown",
+            logline: id === '69f7365c1cd954ae93abb532' 
+              ? "A mystical journey through a forest where lemons glow with ancient magic and secrets are hidden in the peel."
+              : "A voiceless princess must reclaim her throne with nothing but courage—and the spy she should never trust.",
+            image: id === '69f7365c1cd954ae93abb532' 
+              ? "/src/assets/lemon_forest.png"
+              : "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=600&q=80",
+            tags: ['Fantasy', 'Adventure', 'Magic'], 
+            tagTypes: ['tag-genre', 'tag-teal', 'tag-mood'],
+            rating: 'PG', 
+            genre: 'Fantasy', 
+            episodes: 15, 
+            completion: 45,
+            readers: '12.5K',
+            score: 4.9,
+            nodes: [],
+            currentNodeId: 's4'
+          });
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStoryDetails();
+  }, [id, stories]);
+
+  if (loading) {
+    return (
+      <div style={{ background: "#0f111a", height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#7C3AED", fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ border: "4px solid rgba(124, 58, 237, 0.1)", borderTop: "4px solid #7C3AED", borderRadius: "50%", width: 50, height: 50, animation: "spin 1s linear infinite", marginBottom: 16 }}></div>
+        <div style={{ fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>Loading story...</div>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}} />
+      </div>
+    );
+  }
+
+  const localUser = (() => {
+    try {
+      const u = localStorage.getItem('user');
+      return u && u !== 'undefined' ? JSON.parse(u) : null;
+    } catch(e) { return null; }
+  })();
+
+  const activeUser = user || localUser;
+  const isMatureGated = story.rating === 'R' &&
+    localStorage.getItem('age_consent') !== 'true' &&
+    localStorage.getItem('tv_mature_consent') !== 'true' &&
+    (!activeUser || activeUser.age < 18);
 
   return (
     <div className="story-page-container fade-in">
@@ -86,8 +173,21 @@ export default function StoryPage({ stories = [], user }) {
         {/* Hero Section */}
         <div className="story-hero-main">
           <div className="story-cover-wrapper">
-            <img src={story.image} alt={story.title} className="story-main-cover" />
+            <img 
+              src={story.image} 
+              alt={story.title} 
+              className="story-main-cover" 
+              style={{ filter: isMatureGated ? 'blur(20px)' : 'none', transition: 'filter 0.5s' }}
+            />
             <div className="cover-badge">{story.rating}</div>
+            {isMatureGated && (
+               <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.5)", color: "white", padding: 16, textAlign: "center", zIndex: 10 }}>
+                  <div>
+                    <AlertTriangle size={24} color="#F43F8E" style={{ marginBottom: 8 }} />
+                    <div style={{ fontSize: 12, fontWeight: 800 }}>Mature Content</div>
+                  </div>
+               </div>
+            )}
           </div>
 
           <div className="story-primary-info">
@@ -117,7 +217,7 @@ export default function StoryPage({ stories = [], user }) {
             </p>
 
             <div className="story-main-actions">
-              <button className="read-now-btn" onClick={() => navigate(`/read/${story.id}`)}>
+              <button className="read-now-btn" onClick={() => navigate(`/manta/${story.id}?ep=1`)}>
                 <Play size={18} fill="currentColor"/>
                 <span>Read First Episode</span>
               </button>
@@ -152,19 +252,56 @@ export default function StoryPage({ stories = [], user }) {
           <div className="tab-content">
             {activeTab === 'episodes' && (
               <div className="episodes-list">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="episode-card" onClick={() => navigate(`/read/${story.id}`)}>
-                    <div className="ep-num">{i + 1}</div>
-                    <div className="ep-thumbnail" style={{ backgroundImage: `url(${story.image})` }}>
-                      <div className="ep-overlay"><Play size={16} fill="white"/></div>
-                    </div>
-                    <div className="ep-info">
-                      <div className="ep-title">Episode {i + 1}: {i === 0 ? "The Awakening" : i === 1 ? "Golden Secrets" : "Hidden Paths"}</div>
-                      <div className="ep-meta">May {10 - i}, 2026 • 8 min read</div>
-                    </div>
-                    <ChevronRight size={18} className="ep-arrow"/>
+                {/* Dynamic Pilot Episode */}
+                <div className="episode-card" onClick={() => navigate(`/manta/${story.id}?ep=1`)}>
+                  <div className="ep-thumbnail" style={{ backgroundImage: `url(${story.image})`, filter: isMatureGated ? 'blur(10px)' : 'none' }}>
+                    <div className="ep-overlay"><Play size={16} fill="white"/></div>
                   </div>
-                ))}
+                  <div className="ep-info">
+                    <div className="ep-title">Episode 1: The Beginning</div>
+                    <div className="ep-meta" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>May 22, 2026</span>
+                      <span style={{ color: 'var(--primary)' }}>#1</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="ep-arrow"/>
+                </div>
+
+                {/* Additional dynamic database episodes if present */}
+                {story.dbEpisodes && story.dbEpisodes.length > 0 ? (
+                  story.dbEpisodes.map((ep) => (
+                    <div key={ep.number} className="episode-card" onClick={() => navigate(`/manta/${story.id}?ep=${ep.number}`)}>
+                      <div className="ep-thumbnail" style={{ backgroundImage: `url(${ep.panels && ep.panels.length > 0 ? ep.panels[0] : story.image})`, filter: isMatureGated ? 'blur(10px)' : 'none' }}>
+                        <div className="ep-overlay"><Play size={16} fill="white"/></div>
+                      </div>
+                      <div className="ep-info">
+                        <div className="ep-title">{ep.title || `Episode ${ep.number}`}</div>
+                        <div className="ep-meta" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>May 22, 2026</span>
+                          <span style={{ color: 'var(--primary)' }}>#{ep.number}</span>
+                        </div>
+                      </div>
+                      <ChevronRight size={18} className="ep-arrow"/>
+                    </div>
+                  ))
+                ) : (
+                  // Hardcoded fallback episodes if no DB episodes
+                  [...Array(4)].map((_, i) => (
+                    <div key={i} className="episode-card" onClick={() => navigate(`/manta/${story.id}?ep=${i + 2}`)}>
+                      <div className="ep-thumbnail" style={{ backgroundImage: `url(${story.image})`, filter: isMatureGated ? 'blur(10px)' : 'none' }}>
+                        <div className="ep-overlay"><Play size={16} fill="white"/></div>
+                      </div>
+                      <div className="ep-info">
+                        <div className="ep-title">Episode {i + 2}: {i === 0 ? "Golden Secrets" : i === 1 ? "Hidden Paths" : i === 2 ? "Silent Alliance" : "The Climax"}</div>
+                        <div className="ep-meta" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>May 22, 2026</span>
+                          <span style={{ color: 'var(--primary)' }}>#{i + 2}</span>
+                        </div>
+                      </div>
+                      <ChevronRight size={18} className="ep-arrow"/>
+                    </div>
+                  ))
+                )}
               </div>
             )}
 
@@ -562,18 +699,14 @@ export default function StoryPage({ stories = [], user }) {
         .episode-card {
           display: flex;
           align-items: center;
-          padding: 16px;
-          background: rgba(255,255,255,0.03);
-          border-radius: 16px;
-          margin-bottom: 12px;
+          padding: 12px 16px;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
           cursor: pointer;
-          transition: all 0.2s;
-          border: 1px solid rgba(255,255,255,0.05);
+          transition: background 0.2s;
         }
 
         .episode-card:hover {
-          background: rgba(255,255,255,0.07);
-          transform: translateX(5px);
+          background: rgba(255,255,255,0.05);
         }
 
         .ep-num {
@@ -584,13 +717,13 @@ export default function StoryPage({ stories = [], user }) {
         }
 
         .ep-thumbnail {
-          width: 120px;
-          aspect-ratio: 16/9;
-          border-radius: 10px;
+          width: 80px;
+          aspect-ratio: 1;
+          border-radius: 8px;
           background-size: cover;
-          background-position: center;
+          background-position: top;
           position: relative;
-          margin-right: 20px;
+          margin-right: 16px;
         }
 
         .ep-overlay {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Star, Lock, Unlock, Bookmark, Info, User, UserCheck, Flame, ShieldAlert, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { Check, Circle, Star, Lock, Unlock, Bookmark, Info, User, UserCheck, Flame, ShieldAlert, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const C = {
@@ -88,21 +88,28 @@ export default function StoryMap({ storyNodes = [], currentNodeId = 's4', onSele
               {/* Branching Options */}
               <div style={{ position: "absolute", left: 140, top: "50%", transform: "translateY(-50%)", display: "flex", flexDirection: "column", gap: 16 }}>
                  {[
-                   { id: 'A', title: 'Protect the Secret', icon: <Flame size={14} color={C.rose} />, popular: true },
-                   { id: 'B', title: 'Follow Your Heart', icon: <Flame size={14} color="#F59E0B" /> },
-                   { id: 'C', title: 'Chase the Truth', icon: <Check size={14} color={C.emerald} />, read: true },
-                   { id: 'D', title: 'Write Your Own Story', dashed: true },
+                   { id: 'A', title: 'Protect the Secret', popular: true, read: true, bookmark: true },
+                   { id: 'B', title: 'Follow Your Heart', userCreated: true, unread: true },
+                   { id: 'C', title: 'Chase the Truth', ageRestricted: true, locked: true },
+                   { id: 'D', title: 'Write Your Own Story', dashed: true, unlocked: true },
                  ].map((c, i) => (
                    <div key={i} style={{ 
                      padding: "12px 18px", borderRadius: 14, 
                      border: c.dashed ? "1px dashed rgba(255,255,255,0.2)" : "1px solid rgba(255,255,255,0.08)",
-                     background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: 12, minWidth: 240,
+                     background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", gap: 8, minWidth: 280,
                      cursor: "pointer", transition: "all 0.2s"
                    }}>
                      <div style={{ width: 26, height: 26, borderRadius: 8, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 900, color: "white" }}>{c.id}</div>
-                     <span style={{ fontSize: 13, fontWeight: 700, flex: 1, color: "white" }}>{c.title}</span>
+                     <span style={{ fontSize: 13, fontWeight: 700, flex: 1, color: "white", filter: c.locked ? 'blur(2px)' : 'none' }}>{c.title}</span>
+                     {c.ageRestricted && <ShieldAlert size={14} color={C.rose} title="Age Restricted" />}
+                     {c.userCreated && <User size={14} color={C.plum} title="Created by you" />}
                      {c.popular && <span style={{ fontSize: 9, fontWeight: 900, color: C.rose, textTransform: "uppercase" }}>Popular</span>}
-                     {c.icon}
+                     {c.bookmark && <Bookmark size={14} color={C.amber} title="Bookmarked" />}
+                     {c.locked ? <Lock size={14} color="rgba(255,255,255,0.1)" title="Locked" /> : (c.unlocked ? <Unlock size={14} color={C.textDim} title="Unlocked" /> : null)}
+                     {/* "Mark as Read/Unread" placeholder interaction */}
+                     <div title={c.read ? "Mark as unread" : "Mark as read"} style={{ cursor: 'pointer' }}>
+                       {c.read ? <Check size={14} color={C.emerald} /> : (c.unread ? <Circle size={14} color={C.textDim} /> : null)}
+                     </div>
                    </div>
                  ))}
               </div>
@@ -115,13 +122,15 @@ export default function StoryMap({ storyNodes = [], currentNodeId = 's4', onSele
         {/* Legend */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 32px" }}>
            {[
-             { icon: <div style={{ width: 14, height: 2, background: C.plum }} />, label: "Your path" },
-             { icon: <Flame size={14} color={C.rose} />, label: "Popular" },
-             { icon: <Bookmark size={14} color={C.amber} />, label: "Bookmarked" },
              { icon: <Check size={14} color={C.emerald} />, label: "Read" },
+             { icon: <Circle size={14} color={C.textDim} />, label: "Unread" },
+             { icon: <Bookmark size={14} color={C.amber} />, label: "Bookmarked" },
              { icon: <Unlock size={14} color={C.textDim} />, label: "Unlocked" },
              { icon: <Lock size={14} color="rgba(255,255,255,0.1)" />, label: "Locked" },
-             { icon: <Star size={14} color={C.plum} />, label: "Creator pick" },
+             { icon: <ShieldAlert size={14} color={C.rose} />, label: "Age restricted" },
+             { icon: <Flame size={14} color={C.rose} />, label: "Popular" },
+             { icon: <User size={14} color={C.plum} />, label: "Created by you" },
+             { icon: <UserCheck size={14} color={C.plumLight} />, label: "By another user" },
            ].map((l, i) => (
              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: C.textDim, fontWeight: 600 }}>
                 {l.icon} <span>{l.label}</span>

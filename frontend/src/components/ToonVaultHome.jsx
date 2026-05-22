@@ -220,6 +220,7 @@ export default function ToonVaultHome() {
   const [showPopup, setShowPopup] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [settings, setSettings] = useState({
@@ -257,6 +258,17 @@ export default function ToonVaultHome() {
   }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('intent') === 'write' && !!localStorage.getItem("token")) {
+       setShowAIModal(true);
+       const pending = localStorage.getItem('pending_prompt');
+       if (pending) {
+         setAiPrompt(pending);
+         localStorage.removeItem('pending_prompt');
+       }
+       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // If user is logged in, never show the welcome/promo popup
     if (!!localStorage.getItem("token")) return;
 
@@ -325,6 +337,31 @@ export default function ToonVaultHome() {
       }
     }
   }, [activeGenre]);
+
+  const handleWriteStoryClick = () => {
+    if (aiPrompt.trim()) {
+      localStorage.setItem('pending_prompt', aiPrompt);
+    }
+    if (localStorage.getItem('age_consent') === 'true') {
+      if (isLoggedIn) {
+        setShowAIModal(true);
+      } else {
+        navigate('/user?intent=write');
+      }
+    } else {
+      setShowConsentModal(true);
+    }
+  };
+
+  const handleConsentAccept = () => {
+    localStorage.setItem('age_consent', 'true');
+    setShowConsentModal(false);
+    if (isLoggedIn) {
+      setShowAIModal(true);
+    } else {
+      navigate('/user?intent=write');
+    }
+  };
 
   const handleNav = (item) => {
     if (item.path) {
@@ -687,13 +724,6 @@ export default function ToonVaultHome() {
               background: isLoggedIn ? COLORS.plum : "transparent", borderRadius: 22, fontSize: 13,
               fontWeight: 600, color: isLoggedIn ? "white" : COLORS.plum, cursor: "pointer", whiteSpace: "nowrap"
             }}>{isLoggedIn ? "Dashboard" : "Log in"}</button>
-            <button className="desktop-only" onClick={() => navigate('/creators')} style={{
-              padding: "9px 20px", border: `1.5px solid ${COLORS.plum}`,
-              background: "transparent",
-              borderRadius: 22, fontSize: 13, fontWeight: 600, color: COLORS.plum,
-              cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap"
-            }}><span>✏️</span> Write a Story</button>
 
             <div className="mobile-only">
               <button onClick={() => setMobileMenuOpen(true)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: COLORS.ink }}>☰</button>
@@ -735,12 +765,6 @@ export default function ToonVaultHome() {
                   background: isLoggedIn ? COLORS.plum : "transparent", borderRadius: 12, fontSize: 14,
                   fontWeight: 600, color: isLoggedIn ? "white" : COLORS.plum, cursor: "pointer",
                 }}>{isLoggedIn ? "Dashboard" : "Log in"}</button>
-                <button onClick={() => { navigate('/creators'); setMobileMenuOpen(false); }} style={{
-                  padding: "14px", border: "none",
-                  background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.plumDark})`,
-                  borderRadius: 12, fontSize: 13, fontWeight: 700, color: "white",
-                  cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
-                }}>✨ Become Creator</button>
               </div>
             </div>
           </div>
@@ -768,16 +792,16 @@ export default function ToonVaultHome() {
 
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
 
-        {/* \u2550\u2550\u2550 HERO \u2550\u2550\u2550 */}
+        {/* ═══ HERO ═══ */}
         <div style={{ padding: "28px 0 40px" }}>
           <div className="hero-container">
 
-            {/* \u2500\u2500 Ambient glow blobs \u2500\u2500 */}
+            {/* Ambient glow blobs */}
             <div style={{ position: "absolute", left: -80, top: -80, width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(109,74,232,0.22) 0%, transparent 65%)", zIndex: 0, pointerEvents: "none" }} />
             <div style={{ position: "absolute", right: 60, bottom: -100, width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 65%)", zIndex: 0, pointerEvents: "none" }} />
             <div style={{ position: "absolute", right: -40, top: -40, width: 280, height: 280, borderRadius: "50%", background: "radial-gradient(circle, rgba(16,185,129,0.09) 0%, transparent 70%)", zIndex: 0, pointerEvents: "none" }} />
 
-            {/* \u2500\u2500 LEFT PANEL \u2500\u2500 */}
+            {/* LEFT PANEL */}
             <div className="hero-left">
 
               {/* Eyebrow badge */}
@@ -815,9 +839,8 @@ export default function ToonVaultHome() {
                   <span>▶</span> Start Reading
                 </button>
                 <button
-                  id="hero-create-story"
-                  className="hero-btn-secondary"
-                  onClick={() => setShowAIModal(true)}
+                  className="hero-btn-primary" 
+                  onClick={handleWriteStoryClick}
                 >
                   ✍️ Write a Story
                 </button>
@@ -847,22 +870,22 @@ export default function ToonVaultHome() {
               </div>
             </div>
 
-            {/* \u2500\u2500 Vertical divider (desktop only) \u2500\u2500 */}
+            {/* Vertical divider (desktop only) */}
             <div className="hero-divider" />
 
-            {/* \u2500\u2500 RIGHT PANEL \u2500\u2500 */}
+            {/* RIGHT PANEL */}
             <div className="hero-right">
 
               {/* Story cover image */}
               <div
                 className="hero-cover"
                 style={{
-                  background: featured.cover && (featured.cover.startsWith('http') || featured.cover.startsWith('/'))
+                  background: typeof featured.cover === 'string' && (featured.cover.startsWith('http') || featured.cover.startsWith('/'))
                     ? `url(${featured.cover}) top center / cover no-repeat`
                     : "url(https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=600&auto=format&fit=crop) center center / cover no-repeat",
                 }}
               >
-                {(!featured.cover || (!featured.cover.startsWith('http') && !featured.cover.startsWith('/'))) && (
+                {(!featured.cover || (typeof featured.cover === 'string' && !featured.cover.startsWith('http') && !featured.cover.startsWith('/'))) && (
                   <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, background: "rgba(0,0,0,0.5)", color: "white" }}>
                     {featured.cover || "✨"}
                   </div>
@@ -947,13 +970,13 @@ export default function ToonVaultHome() {
                       type="text"
                       value={aiPrompt}
                       onChange={e => setAiPrompt(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') setShowAIModal(true); }}
+                      onKeyDown={e => { if (e.key === 'Enter') handleWriteStoryClick(); }}
                       placeholder="Type your story idea..."
                       className="hero-prompt-input"
                     />
                     <button
                       id="hero-prompt-submit"
-                      onClick={() => setShowAIModal(true)}
+                      onClick={handleWriteStoryClick}
                       style={{
                         width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                         background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
@@ -1187,14 +1210,6 @@ export default function ToonVaultHome() {
           </div>
         </section>
 
-        {/* ═══ INDIE CREATORS ═══ */}
-        <section style={{ marginBottom: 44 }}>
-          <SectionHeader title="🌱 Indie Creator Spotlight" sub="Stories from independent creators" viewAll />
-          <HorizontalScroll>
-            {liveStories.slice(5, 14).map(s => <StoryCard key={s.id} story={s} size="small" />)}
-          </HorizontalScroll>
-        </section>
-
         {/* ═══ FREE TO READ SECTION ═══ */}
         <section style={{ marginBottom: 44 }}>
           <div style={{
@@ -1220,38 +1235,6 @@ export default function ToonVaultHome() {
                 border: `1.5px solid ${COLORS.plum}`, borderRadius: 24, fontSize: 14, fontWeight: 600, cursor: "pointer",
               }}>Get the app</button>
             </div>
-          </div>
-        </section>
-
-        {/* ═══ FOR CREATORS CTA ═══ */}
-        <section id="creators" style={{ marginBottom: 44, scrollMarginTop: 80 }}>
-          <div style={{
-            background: `linear-gradient(135deg, ${COLORS.ink} 0%, #3D1A5C 100%)`,
-            borderRadius: 20, padding: "40px 44px",
-            display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 24,
-            position: "relative", overflow: "hidden",
-          }}>
-            <div style={{ position: "absolute", right: 60, top: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(109,74,232,0.15)" }} />
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.rose, letterSpacing: 1.5, textTransform: "uppercase", display: "block", marginBottom: 10 }}>Creators 101</span>
-              <h3 style={{ fontSize: 26, fontWeight: 800, color: "white", margin: "0 0 10px", lineHeight: 1.2 }}>Publish your story.<br />Own your world.</h3>
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", margin: "0 0 24px", lineHeight: 1.7, maxWidth: 420 }}>Build branching interactive stories and grow a fanbase. ToonVault's creator tools are built for writers who take storytelling seriously.</p>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {["✏️ Start writing", "👥 Build a team", "📖 Map your story"].map((f, i) => (
-                  <span key={i} style={{
-                    fontSize: 13, color: "rgba(255,255,255,0.8)", background: "rgba(255,255,255,0.1)",
-                    padding: "6px 14px", borderRadius: 16,
-                  }}>{f}</span>
-                ))}
-              </div>
-            </div>
-            <button onClick={() => setShowAIModal(true)} style={{
-              position: "relative", zIndex: 1,
-              padding: "14px 32px", background: COLORS.plum, color: "white",
-              border: "none", borderRadius: 28, fontSize: 15, fontWeight: 700,
-              cursor: "pointer", whiteSpace: "nowrap",
-              boxShadow: "0 4px 16px rgba(109,74,232,0.4)",
-            }}>✏️ Start publishing free</button>
           </div>
         </section>
 
@@ -1332,7 +1315,7 @@ export default function ToonVaultHome() {
                 </div>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 24, fontWeight: 900, color: COLORS.gold }}>10k+</div>
-                  <div style={{ fontSize: 12, color: COLORS.muted }}>Creators</div>
+                  <div style={{ fontSize: 12, color: COLORS.muted }}>Story</div>
                 </div>
               </div>
             </div>
@@ -1408,16 +1391,6 @@ export default function ToonVaultHome() {
                 ] 
               },
               { 
-                title: "Create", 
-                links: [
-                  { l: "Publish a story", t: "/dashboard?page=ai" },
-                  { l: "Creators 101", t: "#creators" },
-                  { l: "Team features", t: "#creators" },
-                  { l: "Creator tools", t: "#creators" },
-                  { l: "Analytics", t: "/dashboard" }
-                ] 
-              },
-              { 
                 title: "Company", 
                 links: [
                   { l: "About", t: "/about" },
@@ -1458,110 +1431,7 @@ export default function ToonVaultHome() {
         </div>
       </footer>
 
-      {/* ═══ BECOME A CREATOR POPUP ═══ */}
-      {showPopup && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-          background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)",
-          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
-          padding: 20
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: "#08090A", border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 32, width: "100%", maxWidth: 900, display: "flex",
-            position: "relative", textAlign: "center", overflow: "hidden",
-            boxShadow: "0 40px 100px rgba(0,0,0,0.8)",
-          }}>
-            {/* Left Side: Dynamic Preview */}
-            <div style={{ flex: 1, position: "relative", background: "#121315", overflow: "hidden", minHeight: 450, display: window.innerWidth > 768 ? "block" : "none" }}>
-               <div style={{
-                 position: "absolute", inset: 0, 
-                 backgroundImage: `url(${featured.cover && String(featured.cover).includes('http') ? featured.cover.trim() : 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23'})`,
-                 backgroundSize: "cover", backgroundPosition: "center",
-                 filter: "brightness(0.6)", transition: "all 1s ease"
-               }} />
-               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #08090A 10%, transparent 90%)" }} />
-               <div style={{ position: "absolute", bottom: 40, left: 30, right: 30, textAlign: "left" }}>
-                 <div style={{ fontSize: 11, color: COLORS.rose, fontWeight: 700, textTransform: "uppercase", marginBottom: 8, letterSpacing: 1 }}>Top Trending Preview</div>
-                 <div style={{ fontSize: 24, fontWeight: 900, color: "white", marginBottom: 6 }}>{featured.title}</div>
-                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", lineHeight: 1.5, marginBottom: 16, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{featured.subtitle || featured.description}</div>
-                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: COLORS.plum, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>✨</div>
-                    <div style={{ fontSize: 13, color: "white", fontWeight: 600 }}>By ToonVault AI Creator</div>
-                 </div>
-               </div>
-            </div>
-
-            {/* Right Side: Content */}
-            <div style={{ flex: 1, padding: "48px 40px", position: "relative" }}>
-              <button onClick={() => setShowPopup(false)} style={{
-                position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", width: 32, height: 32, borderRadius: 16,
-                fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.2s", zIndex: 10
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "white"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
-              >×</button>
-              
-              <div style={{
-                width: 52, height: 52, borderRadius: 16, margin: "0 auto 16px",
-                background: "linear-gradient(135deg, #8B5CF6, #F43F8E)",
-                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26,
-                boxShadow: "0 10px 24px rgba(139,92,246,0.3)"
-              }}>✍️</div>
-              
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: "white", margin: "0 0 10px", letterSpacing: -0.5 }}>
-                Become a ToonVault Creator
-              </h2>
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", margin: "0 auto 24px", lineHeight: 1.5 }}>
-                Share your worlds with millions. Whether it's a comic or an immersive novel, your audience is waiting.
-              </p>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28, textAlign: "left" }}>
-                {[
-                  { icon: "✨", title: "Creative Freedom", desc: "Build whatever you want." },
-                  { icon: "🎨", title: "AI Panels", desc: "Generate art with AI." },
-                  { icon: "👥", title: "Global Reach", desc: "Reach millions instantly." },
-                  { icon: "📊", title: "Live Analytics", desc: "Track your story growth." }
-                ].map((feat, idx) => (
-                  <div key={idx} style={{
-                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: 14, padding: "12px", display: "flex", gap: 10, alignItems: "center",
-                  }}>
-                    <div style={{ fontSize: 20 }}>{feat.icon}</div>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "white", marginBottom: 1 }}>{feat.title}</div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", lineHeight: 1.2 }}>{feat.desc}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <button onClick={() => navigate('/dashboard?page=stories')} style={{
-                width: "100%", padding: "15px", border: "none",
-                background: "linear-gradient(135deg, #8B5CF6, #F43F8E)",
-                borderRadius: 14, fontSize: 15, fontWeight: 700, color: "white",
-                cursor: "pointer", boxShadow: "0 8px 24px rgba(139,92,246,0.25)",
-                transition: "transform 0.2s"
-              }}
-                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
-              >
-                Become ToonVault Creator 🚀
-              </button>
-              <button onClick={() => setShowPopup(false)} style={{
-                background: "none", border: "none", color: "rgba(255,255,255,0.35)",
-                fontSize: 12, marginTop: 16, cursor: "pointer", transition: "color 0.2s"
-              }}
-                onMouseEnter={e => e.currentTarget.style.color = "white"}
-                onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,0.35)"}
-              >I'll explore first</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* ═══ AI INSTRUCTION MODAL ═══ */}
+      {/* AI INSTRUCTION MODAL */}
       {showAIModal && (
         <div style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: "white", borderRadius: 32, width: "100%", maxWidth: 600, overflow: "hidden", position: "relative", boxShadow: "0 30px 60px rgba(0,0,0,0.4)" }}>
@@ -1583,19 +1453,61 @@ export default function ToonVaultHome() {
               <div style={{ marginTop: 25, display: "flex", gap: 12 }}>
                 <button onClick={() => setShowAIModal(false)} style={{ flex: 1, padding: "16px", borderRadius: 16, border: `2px solid ${COLORS.border}`, background: "none", color: COLORS.muted, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
                 <button 
-                  onClick={() => {
-                    const user = JSON.parse(localStorage.getItem('user'));
-                    if(!user) navigate('/user');
-                    else navigate('/dashboard?page=ai&prompt=' + encodeURIComponent(aiPrompt));
-                  }}
+                  onClick={handleWriteStoryClick}
                   style={{ flex: 2, padding: "16px", borderRadius: 16, background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.plumDark})`, color: "white", border: "none", fontWeight: 700, cursor: "pointer", boxShadow: `0 8px 20px ${COLORS.plum}44` }}
                 >
                   ✨ Start AI Generation
                 </button>
               </div>
-              <p style={{ fontSize: 12, color: COLORS.muted, textAlign: "center", marginTop: 20 }}>Using <strong>Runware Flux AI</strong> · High Fidelity Manta Style</p>
+              <div style={{ marginTop: 24, padding: "16px", background: "rgba(109,74,232,0.05)", borderRadius: 12, border: "1px solid rgba(109,74,232,0.15)" }}>
+                <div style={{ color: COLORS.plum, fontSize: 13, fontWeight: 700, marginBottom: 4 }}>💡 Write a story readers love</div>
+                <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.5 }}>
+                  If your story becomes popular and sells well with our readers, you might be able to earn money from it in the future!
+                </div>
+              </div>
             </div>
+            <p style={{ fontSize: 12, color: COLORS.muted, textAlign: "center", marginBottom: 20 }}>Using <strong>Runware Flux AI</strong> · High Fidelity Manta Style</p>
             <button onClick={() => setShowAIModal(false)} style={{ position: "absolute", top: 15, right: 15, width: 32, height: 32, borderRadius: "50%", background: "rgba(0,0,0,0.2)", border: "none", color: "white", cursor: "pointer", fontSize: 18 }}>×</button>
+          </div>
+        </div>
+      )}
+
+      {/* CONSENT MODAL */}
+      {showConsentModal && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+        }}>
+          <div style={{
+            background: "#121315", width: "100%", maxWidth: 440, borderRadius: 24, padding: "32px 28px",
+            border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+            textAlign: "center"
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔞</div>
+            <h2 style={{ color: "white", fontSize: 22, margin: "0 0 12px", fontWeight: 800 }}>Content Warning</h2>
+            <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: "0 0 24px", lineHeight: 1.6 }}>
+              ToonVault contains stories and panels that may not be suitable for all ages. By continuing, you confirm that you are at least 18 years old and consent to viewing and writing mature content.
+            </p>
+            <div style={{ display: "flex", gap: 12, flexDirection: "column" }}>
+              <button 
+                onClick={handleConsentAccept}
+                style={{
+                  width: "100%", padding: 14, borderRadius: 12, border: "none",
+                  background: "linear-gradient(135deg, #7c3aed, #6d28d9)", color: "white",
+                  fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "0 6px 20px rgba(109,74,232,0.4)"
+                }}>
+                I Agree — Continue
+              </button>
+              <button 
+                onClick={() => setShowConsentModal(false)}
+                style={{
+                  width: "100%", padding: 14, borderRadius: 12, border: "1px solid rgba(255,255,255,0.2)",
+                  background: "transparent", color: "rgba(255,255,255,0.7)",
+                  fontSize: 15, fontWeight: 600, cursor: "pointer"
+                }}>
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1603,7 +1515,7 @@ export default function ToonVaultHome() {
       {/* ═══ FLOATING AI BUTTON ═══ */}
       <button 
         className="fab-button"
-        onClick={() => setShowAIModal(true)} style={{
+        onClick={handleWriteStoryClick} style={{
         position: "fixed", bottom: 30, right: 30, width: 70, height: 70,
         borderRadius: "50%", background: `linear-gradient(135deg, ${COLORS.plum}, ${COLORS.rose})`,
         border: "none", color: "white", fontSize: 28, cursor: "pointer",
