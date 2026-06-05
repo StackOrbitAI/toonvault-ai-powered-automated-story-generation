@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import StoryImage from "./StoryImage";
 
 const COLORS = {
   bg: "#FAF7F2",
@@ -61,6 +62,8 @@ const FEATURED = [
   { title: "ToonVault Originals", subtitle: "Experience stories crafted by advanced AI.", genre: "AI Powered", badge: "NEW", bg: "linear-gradient(135deg, #3D1A5C 0%, #E8336D 100%)", cover: "✨" }
 ];
 
+const DEFAULT_COVER = "/covers/fantasy_cover_1777743338844.png";
+
 function StoryCard({ story, size = "normal" }) {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
@@ -89,21 +92,35 @@ function StoryCard({ story, size = "normal" }) {
       <div style={{
         height: isMobile ? (size === "large" ? 190 : size === "small" ? 130 : 160) : (size === "large" ? 220 : size === "small" ? 150 : 185),
         background: story.bg || COLORS.plumLight,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: size === "large" ? 60 : 48,
+        overflow: "hidden",
         position: "relative",
       }}>
-        {(String(story.cover || "").trim().includes("http") || String(story.cover || "").trim().startsWith("/")) ? (
-          <img src={String(story.cover).trim()} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={story.title} />
-        ) : (
-          <span>{story.cover || "📖"}</span>
-        )}
+        <StoryImage 
+          src={story.cover} 
+          alt={story.title}
+          style={{ width: "100%", height: "100%" }}
+        />
         {story.updated && (
           <span style={{
             position: "absolute", top: 8, left: 8,
             background: COLORS.rose, color: "white",
             fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, letterSpacing: 0.5,
           }}>UP</span>
+        )}
+        {story.isPopular && (
+          <span style={{
+            position: "absolute", top: 8, left: story.updated ? 40 : 8,
+            background: COLORS.gold, color: "white",
+            fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6,
+          }}>🔥 POPULAR</span>
+        )}
+        {story.isAgeRestricted && (
+          <span style={{
+            position: "absolute", top: story.isPopular || story.updated ? 36 : 8, left: 8,
+            background: COLORS.ink, color: "white",
+            fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6,
+            border: "1px solid rgba(255,255,255,0.2)"
+          }}>18+</span>
         )}
         {story.type === "novel" && (
           <span style={{
@@ -204,7 +221,7 @@ function SectionHeader({ title, viewAll, sub, target }) {
   );
 }
 
-export default function ToonVaultHome() {
+function ToonVaultHome() {
   const navigate = useNavigate();
   const [activeDay, setActiveDay] = useState("Mon");
   const [activeGenre, setActiveGenre] = useState("all");
@@ -240,17 +257,33 @@ export default function ToonVaultHome() {
     axios.get('/api/stories')
       .then(res => {
         if (Array.isArray(res.data)) {
-          const mapped = res.data.map(s => ({
-            ...s,
-            id: s._id,
-            cover: s.panels && s.panels.length > 0 ? s.panels[0] : (s.coverIcon || "📖"),
-            bg: "linear-gradient(135deg, #121315 0%, #1A1B1E 100%)",
-            mood: s.genre ? [s.genre.toLowerCase()] : ["fantasy"],
-            day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][Math.floor(Math.random() * 7)],
-            updated: true,
-            rating: s.rating || "4.9",
-            views: s.views > 1000 ? (s.views / 1000).toFixed(1) + "K" : s.views
-          }));
+          const mapped = res.data.map(s => {
+            let cover = s.coverIcon || "📖";
+            if (s.panels && s.panels.length > 0) {
+              cover = s.panels[0];
+            } else if (cover === "✨" || cover === "📖") {
+              // Try to pick a thematic cover if available
+              const genre = String(s.genre || "").toLowerCase();
+              if (genre.includes("romance")) cover = "/covers/romance_cover_1777743324375.png";
+              else if (genre.includes("fantasy")) cover = "/covers/fantasy_cover_1777743338844.png";
+              else if (genre.includes("action")) cover = "/covers/action_cover_1777743352958.png";
+              else if (genre.includes("drama")) cover = "/covers/drama_cover_1777743372879.png";
+              else if (genre.includes("horror")) cover = "/covers/horror_cover_1777743387658.png";
+              else cover = DEFAULT_COVER;
+            }
+
+            return {
+              ...s,
+              id: s._id,
+              cover: cover,
+              bg: "linear-gradient(135deg, #121315 0%, #1A1B1E 100%)",
+              mood: s.genre ? [s.genre.toLowerCase()] : ["fantasy"],
+              day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][Math.floor(Math.random() * 7)],
+              updated: true,
+              rating: s.rating || "4.9",
+              views: s.views > 1000 ? (s.views / 1000).toFixed(1) + "K" : s.views
+            };
+          });
           setLiveStories(mapped);
         }
       })
@@ -686,7 +719,7 @@ export default function ToonVaultHome() {
                           >
                             <div style={{ width: 40, height: 40, borderRadius: 6, background: "#f0f0f0", overflow: "hidden" }}>
                               {(String(s.cover || "").trim().includes("http") || String(s.cover || "").trim().startsWith("/")) ? (
-                                <img src={s.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                <img src={String(s.cover).includes("/src/assets/") ? String(s.cover).replace("/src/assets/", "/covers/") : s.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                               ) : (
                                 <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{s.cover || '📖'}</div>
                               )}
@@ -880,9 +913,9 @@ export default function ToonVaultHome() {
               <div
                 className="hero-cover"
                 style={{
-                  background: typeof featured.cover === 'string' && (featured.cover.startsWith('http') || featured.cover.startsWith('/'))
-                    ? `url(${featured.cover}) top center / cover no-repeat`
-                    : "url(https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=600&auto=format&fit=crop) center center / cover no-repeat",
+                  background: (typeof featured.cover === 'string' && (featured.cover.startsWith('http') || featured.cover.startsWith('/')))
+                    ? `url(${featured.cover.includes("/src/assets/") ? featured.cover.replace("/src/assets/", "/covers/") : featured.cover}) top center / cover no-repeat`
+                    : `url(${DEFAULT_COVER}) center center / cover no-repeat`,
                 }}
               >
                 {(!featured.cover || (typeof featured.cover === 'string' && !featured.cover.startsWith('http') && !featured.cover.startsWith('/'))) && (
@@ -1108,13 +1141,14 @@ export default function ToonVaultHome() {
                    <div style={{ 
                      position: "absolute", top: 0, left: 0, padding: "2px 8px", 
                      background: i === 0 ? COLORS.gold : i === 1 ? "#A1A1AA" : "#CD7F32",
-                     color: "white", fontSize: 16, fontWeight: 900, borderBottomRightRadius: 10 
+                     color: "white", fontSize: 16, fontWeight: 900, borderBottomRightRadius: 10,
+                     zIndex: 1
                    }}>{i + 1}</div>
-                   <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>
-                     {(String(s.cover || "").trim().includes("http") || String(s.cover || "").trim().startsWith("/")) ? (
-                       <img src={String(s.cover).trim()} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                     ) : s.cover}
-                   </div>
+                   <StoryImage 
+                     src={s.cover} 
+                     alt={s.title}
+                     style={{ width: "100%", height: "100%" }}
+                   />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
                   <div style={{ fontSize: 11, color: COLORS.rose, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>{s.genre}</div>
@@ -1190,12 +1224,13 @@ export default function ToonVaultHome() {
                 </div>
                 <div style={{
                   width: 42, height: 54, borderRadius: 8, flexShrink: 0,
-                  background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", 
-                  fontSize: 20, overflow: "hidden"
+                  background: s.bg, overflow: "hidden"
                 }}>
-                  {(String(s.cover || "").trim().includes("http") || String(s.cover || "").trim().startsWith("/")) ? (
-                    <img src={String(s.cover).trim()} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : s.cover}
+                  <StoryImage 
+                    src={s.cover} 
+                    alt={s.title}
+                    style={{ width: "100%", height: "100%" }}
+                  />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.ink, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</div>
@@ -1531,3 +1566,5 @@ export default function ToonVaultHome() {
     </div>
   );
 }
+
+export default ToonVaultHome;

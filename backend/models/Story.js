@@ -30,14 +30,27 @@ const StorySchema = new mongoose.Schema({
         isPopular: { type: Boolean, default: false },
         isAgeRestricted: { type: Boolean, default: false },
         creatorPick: { type: Boolean, default: false },
+        authorId: String,
+        authorName: String,
         x: Number, // Position on map
         y: Number
     }],
     episodes: [{
         number: Number,
         title: String,
-        panels: [String],
-        content: String,
+        description: String,
+        scenes: [{
+            number: Number,
+            title: String,
+            panels: [String],
+            content: String, // JSON string of panel text/prompts
+            choicePrompts: [{
+                label: String,
+                title: String,
+                desc: String,
+                targetScene: Number
+            }]
+        }],
         createdAt: { type: Date, default: Date.now }
     }],
     createdAt: { type: Date, default: Date.now }

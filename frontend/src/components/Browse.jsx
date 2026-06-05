@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import axios from "axios";
+import StoryImage from "./StoryImage";
 
 // ── Design tokens (matched from homepage) ──────────────────────────────────
 const C = {
@@ -136,6 +137,8 @@ function StarRating({ rating }) {
   );
 }
 
+const DEFAULT_COVER = "/covers/fantasy_cover_1777743338844.png";
+
 // ── Story card for browse grid ─────────────────────────────────────────────
 function BrowseCard({ story, view = "grid", index }) {
   const [bookmarked, setBookmarked] = useState(false);
@@ -161,15 +164,14 @@ function BrowseCard({ story, view = "grid", index }) {
         <div style={{
           width: 54, height: 68, borderRadius: 10, flexShrink: 0,
           background: story.bg || C.plumLight,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 26, boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-          overflow: "hidden"
+          overflow: "hidden",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
         }}>
-          {String(story.cover || "").trim().includes("/") ? (
-            <img src={String(story.cover).trim()} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt={story.title} />
-          ) : (
-            <span>{story.cover}</span>
-          )}
+          <StoryImage 
+            src={story.cover} 
+            alt={story.title}
+            style={{ width: "100%", height: "100%" }}
+          />
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -243,17 +245,19 @@ function BrowseCard({ story, view = "grid", index }) {
     >
       <div style={{
         height: 200, background: story.bg || C.plumLight,
-        display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 56, position: "relative",
         overflow: "hidden"
       }}>
-        {String(story.cover || "").trim().includes("/") ? (
-          <img src={String(story.cover).trim()} style={{ width: "100%", height: "100%", objectFit: "cover", filter: hovered ? "brightness(1.1)" : "none", transition: "filter 0.3s, transform 0.3s", transform: hovered ? "scale(1.05)" : "scale(1)" }} alt={story.title} />
-        ) : (
-          <span style={{ filter: hovered ? "drop-shadow(0 4px 12px rgba(0,0,0,0.3))" : "none", transform: hovered ? "scale(1.1)" : "scale(1)", display: "block", transition: "all 0.3s" }}>
-            {story.cover}
-          </span>
-        )}
+        <StoryImage 
+          src={story.cover} 
+          alt={story.title}
+          style={{ 
+            width: "100%", height: "100%", 
+            filter: hovered ? "brightness(1.1)" : "none", 
+            transition: "filter 0.3s, transform 0.3s", 
+            transform: hovered ? "scale(1.05)" : "scale(1)" 
+          }}
+        />
         {story.updated && (
           <span style={{
             position: "absolute", top: 10, left: 10,
@@ -337,18 +341,33 @@ export default function ToonVaultBrowse() {
     axios.get('/api/stories')
       .then(res => {
         if (Array.isArray(res.data)) {
-          const mapped = res.data.map(s => ({
-            ...s,
-            id: s._id,
-            cover: s.panels && s.panels.length > 0 ? s.panels[0] : (s.coverIcon || "📖"),
-            bg: "linear-gradient(135deg, #121315 0%, #1A1B1E 100%)",
-            mood: s.genre ? [s.genre.toLowerCase()] : ["fantasy"],
-            day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][Math.floor(Math.random() * 7)],
-            updated: true,
-            type: s.type || "comic",
-            rating: s.rating || 4.9,
-            views: s.views > 1000 ? (s.views / 1000).toFixed(1) + "K" : (s.views || "1.2K")
-          }));
+          const mapped = res.data.map(s => {
+            let cover = s.coverIcon || "📖";
+            if (s.panels && s.panels.length > 0) {
+              cover = s.panels[0];
+            } else if (cover === "✨" || cover === "📖") {
+              const genre = String(s.genre || "").toLowerCase();
+              if (genre.includes("romance")) cover = "/covers/romance_cover_1777743324375.png";
+              else if (genre.includes("fantasy")) cover = "/covers/fantasy_cover_1777743338844.png";
+              else if (genre.includes("action")) cover = "/covers/action_cover_1777743352958.png";
+              else if (genre.includes("drama")) cover = "/covers/drama_cover_1777743372879.png";
+              else if (genre.includes("horror")) cover = "/covers/horror_cover_1777743387658.png";
+              else cover = DEFAULT_COVER;
+            }
+
+            return {
+              ...s,
+              id: s._id,
+              cover: cover,
+              bg: "linear-gradient(135deg, #121315 0%, #1A1B1E 100%)",
+              mood: s.genre ? [s.genre.toLowerCase()] : ["fantasy"],
+              day: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][Math.floor(Math.random() * 7)],
+              updated: true,
+              type: s.type || "comic",
+              rating: s.rating || 4.9,
+              views: s.views > 1000 ? (s.views / 1000).toFixed(1) + "K" : (s.views || "1.2K")
+            };
+          });
           const fallbackCover = "/covers/romance_cover_1777743324375.png";
           const images = {
             romance: "/covers/romance_cover_1777743324375.png",

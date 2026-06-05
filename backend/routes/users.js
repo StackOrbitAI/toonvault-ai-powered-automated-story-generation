@@ -118,5 +118,55 @@ router.post('/update-plan', auth, async (req, res) => {
     }
 });
 
+// Toggle Bookmark
+router.post('/bookmarks/:storyId', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const storyId = req.params.storyId;
+        const index = user.bookmarks.indexOf(storyId);
+        if (index === -1) {
+            user.bookmarks.push(storyId);
+            await user.save();
+            res.json({ message: 'Bookmarked', bookmarked: true });
+        } else {
+            user.bookmarks.splice(index, 1);
+            await user.save();
+            res.json({ message: 'Unbookmarked', bookmarked: false });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Mark Node as Read
+router.post('/read-nodes/:storyId/:nodeId', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const { storyId, nodeId } = req.params;
+        const exists = user.readNodes.find(n => n.storyId.toString() === storyId && n.nodeId === nodeId);
+        if (!exists) {
+            user.readNodes.push({ storyId, nodeId });
+            user.storiesRead = (user.storiesRead || 0) + 1;
+            await user.save();
+        }
+        res.json({ message: 'Marked as read', read: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Mark Node as Unread
+router.delete('/read-nodes/:storyId/:nodeId', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const { storyId, nodeId } = req.params;
+        user.readNodes = user.readNodes.filter(n => !(n.storyId.toString() === storyId && n.nodeId === nodeId));
+        await user.save();
+        res.json({ message: 'Marked as unread', read: false });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
 

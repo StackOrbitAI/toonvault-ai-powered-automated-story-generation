@@ -28,3 +28,9 @@ Thumbs.db
 # Certificates and uploads
 certbot/
 uploads/
+
+# Agent files
+.agents/
+.claude/
+.gemini/
+graphify-out/

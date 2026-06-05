@@ -25,6 +25,12 @@ const UserSchema = new mongoose.Schema({
     storiesRead: { type: Number, default: 0 },
     aiPanelsUsed: { type: Number, default: 0 },
     articlesGenerated: { type: Number, default: 0 },
+    readNodes: [{
+        storyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Story' },
+        nodeId: String,
+        readAt: { type: Date, default: Date.now }
+    }],
+    bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Story' }],
     createdAt: { type: Date, default: Date.now }
 });
 
