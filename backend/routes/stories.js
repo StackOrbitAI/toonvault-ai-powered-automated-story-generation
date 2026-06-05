@@ -199,17 +199,18 @@ router.post('/generate', auth, async (req, res) => {
                 ...storyPanels.map((p, idx) => ({
                     taskType: "imageInference",
                     taskUUID: crypto.randomUUID(),
-                    model: "runware:100@1",
+                    model: "runware:100@1", // Always use best model
                     positivePrompt: finalCategory === "Quotes" 
                         ? `masterpiece, minimalist aesthetic, cinematic photography, high contrast, moody lighting, elegant atmosphere, ultra-detailed, ${p.imagePrompt}`
-                        : `score_9, score_8_up, masterpiece, best quality, beautiful manhwa webtoon art, official webtoon style, dynamic composition, dramatic cinematic lighting, highly detailed character design, clean linework, ${p.imagePrompt}`,
+                        : `masterpiece, ultra-detailed Korean manhwa webtoon style, beautiful anime aesthetic, official webtoon style, dynamic composition, dramatic cinematic lighting, highly detailed character design, clean linework, vibrant colors, ${p.imagePrompt}`,
+                    negativePrompt: "blurry, low quality, ugly, bad anatomy, extra limbs, watermark, text overlay, logo, nsfw, bad proportions",
                     width: 512,
                     height: 768,
                     numberResults: 1,
-                    outputFormat: "JPG",
+                    outputFormat: "WEBP",
                     seed: Math.floor(Math.random() * 2147483647),
-                    CFGScale: 3.5,
-                    steps: 6
+                    CFGScale: 7,
+                    steps: 28
                 }))
             ];
 
@@ -243,6 +244,14 @@ router.post('/generate', auth, async (req, res) => {
         }
 
         const isMature = finalCategory?.toLowerCase() === 'mature' || (req.body.status === 'published' && finalCategory?.toLowerCase() === 'mature');
+        
+        // Build enriched content array with text+speaker for reader overlay
+        const enrichedContent = storyPanels.map((p, i) => ({
+            speaker: p.speaker || 'Narration',
+            text: p.text || '',
+            imageUrl: imageUrls[i] || ''
+        }));
+        
         const newStory = new Story({
             title: title || finalTopic || "Untitled Story",
             genre: finalCategory || "Fantasy",
@@ -252,7 +261,7 @@ router.post('/generate', auth, async (req, res) => {
             type: 'Comic',
             description: description,
             isAgeRestricted: isMature,
-            content: JSON.stringify(storyPanels), // Store the dialogue too
+            content: JSON.stringify(enrichedContent), // enriched with speaker + text for overlay
             panels: imageUrls,
             coverIcon: "✨"
         });

@@ -213,21 +213,25 @@ export default function StoryMap({
         {/* Footer: Legend & Controls */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 32 }}>
           {/* Legend Chips */}
-          <div style={{ display: "flex", gap: 12, flexWrap: 'wrap', maxWidth: '70%' }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: 'wrap', maxWidth: '70%' }}>
              {[
                { icon: <Check size={12} />, color: C.emerald, label: "Read" },
-               { icon: <Bookmark size={12} />, color: C.amber, label: "Vaulted" },
+               { icon: <Circle size={12} />, color: C.textDim, label: "Not Read" },
+               { icon: <Bookmark size={12} />, color: C.amber, label: "Bookmarked" },
+               { icon: <Unlock size={12} />, color: C.textDim, label: "Unlocked" },
+               { icon: <Lock size={12} />, color: C.textDim, label: "Locked" },
                { icon: <ShieldAlert size={12} />, color: C.rose, label: "18+" },
                { icon: <Flame size={12} />, color: C.amber, label: "Popular" },
-               { icon: <User size={12} />, color: C.plum, label: "My Choice" },
+               { icon: <User size={12} />, color: C.plum, label: "Your Path" },
+               { icon: <UserCheck size={12} />, color: C.textDim, label: "Creator Path" },
              ].map((l, i) => (
                <div key={i} style={{ 
-                 display: "flex", alignItems: "center", gap: 8, 
+                 display: "flex", alignItems: "center", gap: 6, 
                  fontSize: 11, color: "white", fontWeight: 700, 
-                 background: 'rgba(255,255,255,0.04)', padding: '6px 12px', borderRadius: 10,
+                 background: 'rgba(255,255,255,0.04)', padding: '6px 10px', borderRadius: 8,
                  border: '1px solid rgba(255,255,255,0.05)'
                }}>
-                  <span style={{ color: l.color }}>{l.icon}</span> <span>{l.label}</span>
+                  <span style={{ color: l.color, display: 'flex' }}>{l.icon}</span> <span>{l.label}</span>
                </div>
              ))}
           </div>

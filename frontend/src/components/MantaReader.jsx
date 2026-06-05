@@ -32,6 +32,8 @@ function AnimatedPanel({ url, index, panelData, isQuoteStory }) {
     return () => observer.disconnect();
   }, []);
 
+  const isNarration = !panelData?.speaker || panelData.speaker === 'Narration' || panelData.speaker === 'narration';
+
   return (
     <div
       ref={ref}
@@ -50,78 +52,79 @@ function AnimatedPanel({ url, index, panelData, isQuoteStory }) {
         loading="lazy"
       />
 
-      {/* Text Overlay */}
+      {/* Text Overlay — shown for ALL stories with text content */}
       {panelData?.text && (
-        isQuoteStory ? (
-          /* ── Quote Style ── */
+        isQuoteStory || isNarration ? (
+          /* ── Narration / Quote Style — cinematic bottom gradient overlay ── */
           <div style={{
             position: 'absolute',
             inset: 0,
             display: 'flex',
             alignItems: 'flex-end',
-            padding: '0 0 32px 0',
+            pointerEvents: 'none',
           }}>
             <div style={{
               width: '100%',
-              background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 60%, transparent 100%)',
-              padding: '48px 28px 28px',
+              background: 'linear-gradient(to top, rgba(3,2,10,0.93) 0%, rgba(3,2,10,0.72) 45%, transparent 100%)',
+              padding: '72px 32px 32px',
               textAlign: 'center',
             }}>
-              {/* Decorative top line */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 14 }}>
-                <div style={{ height: 1, width: 40, background: 'linear-gradient(to right, transparent, rgba(167,139,250,0.7))' }} />
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#A78BFA' }} />
-                <div style={{ height: 1, width: 40, background: 'linear-gradient(to left, transparent, rgba(167,139,250,0.7))' }} />
+              {/* Decorative divider */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ height: 1, width: 48, background: 'linear-gradient(to right, transparent, rgba(167,139,250,0.6))' }} />
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#C4B5FD' }} />
+                <div style={{ height: 1, width: 48, background: 'linear-gradient(to left, transparent, rgba(167,139,250,0.6))' }} />
               </div>
               <div style={{
-                fontSize: 'clamp(15px, 4vw, 20px)',
+                fontSize: 'clamp(14px, 3.8vw, 19px)',
                 fontStyle: 'italic',
                 fontWeight: 500,
-                color: 'rgba(255,255,255,0.95)',
-                lineHeight: 1.65,
-                letterSpacing: 0.3,
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                textShadow: '0 2px 12px rgba(0,0,0,0.8)',
+                color: 'rgba(255,255,255,0.97)',
+                lineHeight: 1.7,
+                letterSpacing: 0.4,
+                fontFamily: "'Georgia', 'Playfair Display', serif",
+                textShadow: '0 2px 16px rgba(0,0,0,0.9), 0 0 40px rgba(124,58,237,0.15)',
+                maxWidth: 560,
+                margin: '0 auto',
               }}>
-                <span style={{ fontSize: '1.6em', color: '#A78BFA', lineHeight: 0, verticalAlign: '-0.25em', marginRight: 4 }}>"</span>
                 {panelData.text}
-                <span style={{ fontSize: '1.6em', color: '#A78BFA', lineHeight: 0, verticalAlign: '-0.25em', marginLeft: 4 }}>"</span>
               </div>
             </div>
           </div>
         ) : (
-          /* ── Manhwa Dialogue Style ── */
+          /* ── Character Dialogue Style — speech bubble ── */
           <div style={{
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
+            pointerEvents: 'none',
           }}>
             <div style={{
               margin: '0 16px 20px',
               padding: '14px 20px',
-              background: 'rgba(5, 4, 8, 0.82)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: 16,
-              border: '1px solid rgba(124,58,237,0.25)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+              background: 'rgba(5, 4, 14, 0.88)',
+              backdropFilter: 'blur(16px)',
+              borderRadius: 18,
+              border: '1px solid rgba(124,58,237,0.3)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)',
             }}>
               {panelData.speaker && (
                 <div style={{
                   fontSize: 10,
                   fontWeight: 900,
-                  color: COLORS.accent,
-                  letterSpacing: 1.5,
+                  color: '#A78BFA',
+                  letterSpacing: 1.8,
                   textTransform: 'uppercase',
-                  marginBottom: 6,
+                  marginBottom: 7,
                 }}>
                   {panelData.speaker}
                 </div>
               )}
               <div style={{
                 fontSize: 'clamp(13px, 3.5vw, 16px)',
-                color: 'rgba(255,255,255,0.95)',
-                lineHeight: 1.55,
+                color: 'rgba(255,255,255,0.97)',
+                lineHeight: 1.6,
                 fontWeight: 500,
                 letterSpacing: 0.2,
               }}>

@@ -39,6 +39,8 @@ const StorySchema = new mongoose.Schema({
         number: Number,
         title: String,
         description: String,
+        panels: [String],       // Direct panel image URLs for this episode
+        content: String,        // JSON array of { speaker, text, imageUrl } for quote overlays
         scenes: [{
             number: Number,
             title: String,
@@ -53,6 +55,7 @@ const StorySchema = new mongoose.Schema({
         }],
         createdAt: { type: Date, default: Date.now }
     }],
+    storyMapData: String,       // JSON string of story map nodes for Quest Map visualization
     createdAt: { type: Date, default: Date.now }
 });
 

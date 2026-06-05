@@ -31,7 +31,8 @@ import {
   Activity,
   BarChart3,
   TrendingUp,
-  Gamepad2
+  Gamepad2,
+  Check
 } from "lucide-react";
 import axios from "axios";
 import { Helmet } from "react-helmet-async";
@@ -361,12 +362,8 @@ export default function StoryPage() {
   );
 
   const handleSelectEpisode = (ep) => {
-    setActiveEpisode(ep);
-    setActiveScene(ep.scenes && ep.scenes.length > 0 ? ep.scenes[0] : null);
-    setViewMode("reader");
-    setShowUnlock(false);
-    setChosenLabel(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Navigate to the professional MantaReader with episode number
+    navigate(`/manta/${id}?ep=${ep.number || 1}`);
   };
 
   const triggerToast = (msg) => {
@@ -459,8 +456,14 @@ export default function StoryPage() {
             </div>
 
             <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 20px 140px" }}>
-              {(activeScene?.panels || story.panels || []).map((url, i) => {
-                const meta = activeScene?.content ? JSON.parse(activeScene.content)[i] : null;
+              {(activeScene?.panels || activeEpisode?.panels || story.panels || []).map((url, i) => {
+                let meta = null;
+                try {
+                  if (activeScene?.content) meta = JSON.parse(activeScene.content)[i];
+                  else if (activeEpisode?.content) meta = JSON.parse(activeEpisode.content)[i];
+                  else if (story.content) meta = JSON.parse(story.content)[i];
+                } catch(e) { console.error(e); }
+                
                 return (
                   <motion.div key={i} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-150px" }} transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }} style={{ marginBottom: 60, borderRadius: 32, overflow: "hidden", border: `1px solid ${COLORS.border}`, position: "relative", boxShadow: "0 30px 60px rgba(0,0,0,0.6)" }}>
                     <StoryImage src={url} style={{ width: "100%", height: "auto", display: "block" }} alt={`Panel ${i+1}`} />
@@ -514,7 +517,7 @@ export default function StoryPage() {
             <Header />
             
             {/* ENHANCED HERO SECTION */}
-            <div style={{ position: "relative", width: "100%", height: isMobile ? "auto" : "680px", background: COLORS.bg, overflow: "hidden" }}>
+            <div style={{ position: "relative", width: "100%", height: isMobile ? "auto" : "400px", background: COLORS.bg, overflow: "hidden" }}>
                <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
                   <motion.div 
                     animate={{ scale: [1, 1.05, 1], rotate: [0, 1, 0] }} 
@@ -526,17 +529,17 @@ export default function StoryPage() {
                   <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, rgba(8, 7, 16, 0.5) 0%, ${COLORS.bg} 98%)` }} />
                </div>
                
-               <div style={{ position: "relative", maxWidth: 1300, margin: "0 auto", height: "100%", display: "flex", alignItems: isMobile ? "flex-start" : "flex-end", padding: isMobile ? "100px 24px 60px" : "0 60px 100px" }}>
-                  <div style={{ display: "flex", gap: isMobile ? 32 : 60, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "center" : "flex-end", width: "100%" }}>
+               <div style={{ position: "relative", maxWidth: 1100, margin: "0 auto", height: "100%", display: "flex", alignItems: isMobile ? "flex-start" : "flex-end", padding: isMobile ? "60px 24px 32px" : "0 40px 60px" }}>
+                  <div style={{ display: "flex", gap: isMobile ? 24 : 32, flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "center" : "flex-end", width: "100%" }}>
                      <motion.div 
-                       initial={{ y: 80, opacity: 0, scale: 0.95 }} 
+                       initial={{ y: 60, opacity: 0, scale: 0.95 }} 
                        animate={{ y: 0, opacity: 1, scale: 1 }} 
                        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                       style={{ width: isMobile ? 220 : 360, flexShrink: 0, borderRadius: 44, overflow: "hidden", boxShadow: "0 60px 120px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.12)", aspectRatio: "3/4.4", position: "relative" }}
+                       style={{ width: isMobile ? 120 : 180, flexShrink: 0, borderRadius: 24, overflow: "hidden", boxShadow: "0 20px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.12)", aspectRatio: "3/4.4", position: "relative" }}
                      >
                         <StoryImage src={story.panels?.[0]} style={{ width: "100%", height: "100%" }} />
-                        <div style={{ position: "absolute", top: 20, right: 20, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)", padding: "8px 16px", borderRadius: 14, color: "#FFF", fontSize: 12, fontWeight: 900, display: "flex", alignItems: "center", gap: 8, border: "1px solid rgba(255,255,255,0.1)" }}>
-                           <Activity size={14} color={COLORS.emerald} /> LIVE
+                        <div style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)", padding: "4px 10px", borderRadius: 8, color: "#FFF", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", gap: 6, border: "1px solid rgba(255,255,255,0.1)" }}>
+                           <Activity size={10} color={COLORS.emerald} /> LIVE
                         </div>
                      </motion.div>
                      
@@ -553,58 +556,58 @@ export default function StoryPage() {
                         </motion.div>
                         
                         <motion.h1 
-                          initial={{ y: 20, opacity: 0 }} 
+                          initial={{ y: 10, opacity: 0 }} 
                           animate={{ y: 0, opacity: 1 }} 
                           transition={{ delay: 0.4, duration: 0.6 }}
-                          style={{ fontSize: isMobile ? 48 : 84, margin: "0 0 28px", fontWeight: 900, letterSpacing: -3.5, lineHeight: 0.9, color: "#FFF" }}
+                          style={{ fontSize: isMobile ? 28 : 42, margin: "0 0 16px", fontWeight: 800, letterSpacing: -1, lineHeight: 1.2, color: "#FFF" }}
                         >
                           {story.title}
                         </motion.h1>
                         
                         <motion.div 
-                          initial={{ y: 20, opacity: 0 }} 
+                          initial={{ y: 10, opacity: 0 }} 
                           animate={{ y: 0, opacity: 1 }} 
                           transition={{ delay: 0.5, duration: 0.6 }}
-                          style={{ display: "flex", gap: 40, justifyContent: isMobile ? "center" : "flex-start", color: "rgba(255,255,255,0.5)", fontSize: 17, fontWeight: 700, marginBottom: 44 }}
+                          style={{ display: "flex", gap: 20, justifyContent: isMobile ? "center" : "flex-start", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 600, marginBottom: 24 }}
                         >
-                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Star size={22} color={COLORS.gold} fill={COLORS.gold} /> <span style={{ color: "#FFF" }}>{story.rating || "4.9"}</span></div>
-                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}><BookOpen size={22} /> <span style={{ color: "#FFF" }}>{story.episodes?.length || 0} Chapters</span></div>
-                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}><Heart size={22} /> <span style={{ color: "#FFF" }}>{story.likes || 0} Bound Souls</span></div>
+                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Star size={16} color={COLORS.gold} fill={COLORS.gold} /> <span style={{ color: "#FFF" }}>{story.rating || "4.9"}</span></div>
+                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}><BookOpen size={16} /> <span style={{ color: "#FFF" }}>{story.episodes?.length || 0} Chapters</span></div>
+                           <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Heart size={16} /> <span style={{ color: "#FFF" }}>{story.likes || 0} Souls</span></div>
                         </motion.div>
                         
                         <motion.div 
-                          initial={{ y: 20, opacity: 0 }} 
+                          initial={{ y: 10, opacity: 0 }} 
                           animate={{ y: 0, opacity: 1 }} 
                           transition={{ delay: 0.6, duration: 0.6 }}
-                          style={{ display: "flex", gap: 20, justifyContent: isMobile ? "center" : "flex-start" }}
+                          style={{ display: "flex", gap: 16, justifyContent: isMobile ? "center" : "flex-start" }}
                         >
                            <button 
                              onClick={() => story.episodes?.length > 0 && handleSelectEpisode(story.episodes[0])} 
                              style={{ 
                                background: `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.rose})`, 
-                               color: "#FFF", padding: "22px 64px", borderRadius: 28, border: "none", 
-                               fontWeight: 900, cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", 
-                               gap: 16, boxShadow: `0 30px 60px rgba(139, 92, 246, 0.45)`, transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)' 
+                               color: "#FFF", padding: "12px 24px", borderRadius: 12, border: "none", 
+                               fontWeight: 700, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", 
+                               gap: 8, boxShadow: `0 10px 20px rgba(139, 92, 246, 0.2)`, transition: 'all 0.3s' 
                              }} 
-                             onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-6px) scale(1.03)'} 
-                             onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0) scale(1)'}
+                             onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'} 
+                             onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
                            >
-                             <Sparkles size={26} /> Start Your Journey
+                             <Sparkles size={16} /> Start Journey
                            </button>
                            
                            {!isMobile && (
                              <button 
                                onClick={() => { setIsLiked(!isLiked); triggerToast(isLiked ? "Soul untethered" : "Soul bound to this story!"); }} 
                                style={{ 
-                                 width: 74, height: 74, borderRadius: 28, background: "rgba(255,255,255,0.06)", 
-                                 border: `1.5px solid ${COLORS.border}`, display: "flex", alignItems: "center", 
+                                 width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.06)", 
+                                 border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", 
                                  justifyContent: "center", cursor: "pointer", color: isLiked ? COLORS.rose : "#FFF", 
                                  transition: 'all 0.3s' 
                                }}
-                               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.transform = "rotate(10deg)"; }}
-                               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "rotate(0deg)"; }}
+                               onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
+                               onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
                              >
-                               <Heart size={32} fill={isLiked ? COLORS.rose : "none"} />
+                               <Heart size={20} fill={isLiked ? COLORS.rose : "none"} />
                              </button>
                            )}
                         </motion.div>
@@ -613,10 +616,10 @@ export default function StoryPage() {
                </div>
             </div>
 
-            <div style={{ maxWidth: 1300, margin: "0 auto", padding: isMobile ? "40px 24px 120px" : "80px 60px 140px" }}>
+            <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "24px 20px 80px" : "40px 60px 100px" }}>
               
               {/* TABBED NAVIGATION SYSTEM */}
-              <div style={{ display: "flex", gap: 40, borderBottom: `1px solid ${COLORS.border}`, marginBottom: 60, paddingBottom: 4, overflowX: "auto", scrollbarWidth: "none" }}>
+              <div style={{ display: "flex", gap: 24, borderBottom: `1px solid ${COLORS.border}`, marginBottom: 40, paddingBottom: 4, overflowX: "auto", scrollbarWidth: "none" }}>
                 {[
                   { id: "episodes", label: "Chronicles", icon: BookOpen },
                   { id: "map", label: "Quest Map", icon: Gamepad2 },
@@ -629,12 +632,12 @@ export default function StoryPage() {
                     style={{ 
                       background: "none", border: "none", padding: "12px 0 20px", 
                       color: activeTab === tab.id ? COLORS.purple : COLORS.textMuted, 
-                      fontSize: 16, fontWeight: 800, cursor: "pointer", position: "relative",
-                      display: "flex", alignItems: "center", gap: 10, transition: "color 0.3s",
+                      fontSize: 14, fontWeight: 700, cursor: "pointer", position: "relative",
+                      display: "flex", alignItems: "center", gap: 8, transition: "color 0.3s",
                       whiteSpace: "nowrap"
                     }}
                   >
-                    <tab.icon size={18} />
+                    <tab.icon size={16} />
                     {tab.label}
                     {activeTab === tab.id && (
                       <motion.div layoutId="activeTab" style={{ position: "absolute", bottom: -2, left: 0, right: 0, height: 4, background: COLORS.purple, borderRadius: 2 }} />
@@ -643,73 +646,164 @@ export default function StoryPage() {
                 ))}
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 420px", gap: 80, alignItems: "start" }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 320px", gap: 40, alignItems: "start" }}>
                 
                 {/* MAIN CONTENT AREA (DYNAMIC TABS) */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 64 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
                   
                   <AnimatePresence mode="wait">
                     {activeTab === "episodes" && (
                       <motion.div key="episodes" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.4 }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 64 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
                           <section>
-                            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 32 }}>
-                               <div style={{ width: 6, height: 40, background: COLORS.purple, borderRadius: 3 }} />
-                               <h3 style={{ margin: 0, fontSize: 32, fontWeight: 900, letterSpacing: -1 }}>The Chronicles</h3>
+                            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                               <div style={{ width: 4, height: 20, background: COLORS.purple, borderRadius: 2 }} />
+                               <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.5 }}>The Chronicles</h3>
                             </div>
-                            <p style={{ color: "#E2E8F0", lineHeight: 1.9, fontSize: 20, fontWeight: 500, letterSpacing: 0.2 }}>{story.description || "In a realm where light and shadow are at war, your choices determine the survival of entire civilizations. Will you be the savior, or the architect of ruin?"}</p>
+                            <p style={{ color: "rgba(255,255,255,0.7)", lineHeight: 1.6, fontSize: 15, fontWeight: 400, letterSpacing: 0.2 }}>{story.description || "In a realm where light and shadow are at war, your choices determine the survival of entire civilizations. Will you be the savior, or the architect of ruin?"}</p>
                           </section>
 
                           <section>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 40 }}>
-                               <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                                  <div style={{ width: 6, height: 40, background: COLORS.rose, borderRadius: 3 }} />
-                                  <h3 style={{ margin: 0, fontSize: 32, fontWeight: 900, letterSpacing: -1 }}>Episodes</h3>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                  <div style={{ width: 4, height: 20, background: COLORS.rose, borderRadius: 2 }} />
+                                  <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.5 }}>Episodes</h3>
                                </div>
                                <Badge label={`${story.episodes?.length || 0} Chronicles`} color={COLORS.rose} icon={TrendingUp} />
                             </div>
                             
-                            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                               {(story.episodes || []).map((ep, idx) => (
                                 <motion.div 
                                   key={ep._id} 
-                                  whileHover={{ x: 12, background: "rgba(255,255,255,0.06)", borderColor: "rgba(139, 92, 246, 0.4)" }} 
+                                  whileHover={{ x: 6, background: "rgba(255,255,255,0.04)", borderColor: "rgba(139, 92, 246, 0.3)" }} 
                                   onClick={() => handleSelectEpisode(ep)} 
                                   style={{ 
                                     background: "rgba(255,255,255,0.02)", 
                                     border: `1px solid ${COLORS.border}`, 
-                                    borderRadius: 32, 
-                                    padding: "24px", 
+                                    borderRadius: 20, 
+                                    padding: "16px", 
                                     cursor: "pointer", 
                                     display: "flex", 
                                     alignItems: "center", 
-                                    gap: 24, 
-                                    transition: "all 0.4s cubic-bezier(0.2, 1, 0.3, 1)" 
+                                    gap: 16, 
+                                    transition: "all 0.3s ease" 
                                   }}
                                 >
-                                  <div style={{ width: 120, height: 84, borderRadius: 20, overflow: "hidden", background: "rgba(255,255,255,0.05)", flexShrink: 0, position: "relative" }}>
+                                  <div style={{ width: 80, height: 56, borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.05)", flexShrink: 0, position: "relative" }}>
                                      <StoryImage src={ep.panels?.[0] || story.panels?.[0]} style={{ width: "100%", height: "100%" }} />
                                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.4)", opacity: 0, transition: "opacity 0.3s" }} className="ep-hover">
-                                        <Maximize2 size={24} color="#FFF" />
+                                        <Maximize2 size={16} color="#FFF" />
                                      </div>
-                                     <div style={{ position: "absolute", top: 10, left: 10, background: idx === 0 ? COLORS.purple : "rgba(0,0,0,0.7)", padding: "4px 12px", borderRadius: 10, fontSize: 12, fontWeight: 900, color: "#FFF", border: "1px solid rgba(255,255,255,0.1)" }}>{ep.number}</div>
+                                     <div style={{ position: "absolute", top: 6, left: 6, background: idx === 0 ? COLORS.purple : "rgba(0,0,0,0.7)", padding: "2px 8px", borderRadius: 8, fontSize: 10, fontWeight: 800, color: "#FFF", border: "1px solid rgba(255,255,255,0.1)" }}>{ep.number}</div>
                                   </div>
                                   
                                   <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 800, fontSize: 22, color: "#FFF", marginBottom: 8 }}>{ep.title}</div>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 14, color: COLORS.textMuted, fontWeight: 600 }}>
-                                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Layers size={16} /> {ep.scenes?.length || 0} Scenes</div>
-                                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}><Clock size={16} /> 8 min read</div>
-                                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}><ThumbsUp size={16} /> {(story.views / 10).toFixed(0)} Likes</div>
+                                    <div style={{ fontWeight: 700, fontSize: 16, color: "#FFF", marginBottom: 4 }}>{ep.title}</div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 12, color: COLORS.textMuted, fontWeight: 500 }}>
+                                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Layers size={14} /> {ep.scenes?.length || 0} Scenes</div>
+                                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Clock size={14} /> 8 min</div>
+                                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}><ThumbsUp size={14} /> {(story.views / 10).toFixed(0)}</div>
                                     </div>
                                   </div>
                                   
-                                  <div style={{ width: 50, height: 50, borderRadius: "50%", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s" }}>
-                                    <ChevronRight size={24} color={COLORS.textMuted} />
+                                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s" }}>
+                                    <ChevronRight size={16} color={COLORS.textMuted} />
                                   </div>
                                 </motion.div>
                               ))}
                             </div>
+
+                            {/* ─── READ NEXT EPISODE CTA ─── */}
+                            {story.episodes && story.episodes.length > 0 && (
+                              <div style={{ marginTop: 32 }}>
+                                {/* Latest Episode Banner */}
+                                <div style={{
+                                  background: `linear-gradient(135deg, rgba(139,92,246,0.12) 0%, rgba(244,63,142,0.08) 100%)`,
+                                  border: `1px solid rgba(139,92,246,0.25)`,
+                                  borderRadius: 24,
+                                  padding: "28px 28px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  gap: 20,
+                                  flexWrap: "wrap"
+                                }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                                    <div style={{
+                                      width: 52, height: 52, borderRadius: 16,
+                                      background: `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.rose})`,
+                                      display: "flex", alignItems: "center", justifyContent: "center",
+                                      boxShadow: `0 8px 20px rgba(139,92,246,0.35)`,
+                                      flexShrink: 0
+                                    }}>
+                                      <BookOpen size={22} color="#FFF" />
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize: 11, fontWeight: 800, color: COLORS.rose, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4 }}>Latest Episode</div>
+                                      <div style={{ fontSize: 17, fontWeight: 800, color: "#FFF", letterSpacing: -0.3 }}>
+                                        {story.episodes[story.episodes.length - 1]?.title || `Episode ${story.episodes.length}`}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <motion.button
+                                    whileHover={{ scale: 1.04, y: -2 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    onClick={() => navigate(`/manta/${id}?ep=${story.episodes[story.episodes.length - 1]?.number || story.episodes.length}`)}
+                                    style={{
+                                      background: `linear-gradient(135deg, ${COLORS.purple}, ${COLORS.rose})`,
+                                      color: "#FFF",
+                                      border: "none",
+                                      borderRadius: 14,
+                                      padding: "14px 28px",
+                                      fontWeight: 800,
+                                      fontSize: 15,
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 10,
+                                      boxShadow: `0 8px 24px rgba(139,92,246,0.35)`,
+                                      whiteSpace: "nowrap",
+                                      flexShrink: 0
+                                    }}
+                                  >
+                                    <Sparkles size={16} />
+                                    Read Latest Episode
+                                  </motion.button>
+                                </div>
+
+                                {/* Episode 1 start link */}
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginTop: 16 }}>
+                                  <div style={{ height: 1, flex: 1, background: `rgba(255,255,255,0.06)` }} />
+                                  <span style={{ fontSize: 12, color: COLORS.textMuted, fontWeight: 600 }}>or</span>
+                                  <div style={{ height: 1, flex: 1, background: `rgba(255,255,255,0.06)` }} />
+                                </div>
+                                <motion.button
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => navigate(`/manta/${id}?ep=1`)}
+                                  style={{
+                                    width: "100%",
+                                    marginTop: 12,
+                                    padding: "14px",
+                                    background: "rgba(255,255,255,0.03)",
+                                    border: `1px solid ${COLORS.border}`,
+                                    borderRadius: 14,
+                                    color: "rgba(255,255,255,0.7)",
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 8
+                                  }}
+                                >
+                                  <BookOpen size={15} />
+                                  Start from Episode 1
+                                </motion.button>
+                              </div>
+                            )}
                           </section>
                         </div>
                       </motion.div>
@@ -782,12 +876,12 @@ export default function StoryPage() {
                   </AnimatePresence>
 
                   {/* Recommendations Section */}
-                  <section style={{ marginTop: 80 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 40 }}>
-                       <div style={{ width: 6, height: 40, background: COLORS.emerald, borderRadius: 3 }} />
-                       <h3 style={{ margin: 0, fontSize: 32, fontWeight: 900, letterSpacing: -1 }}>Seekers Also Read</h3>
+                  <section style={{ marginTop: 60 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                       <div style={{ width: 4, height: 20, background: COLORS.emerald, borderRadius: 2 }} />
+                       <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, letterSpacing: -0.5 }}>Seekers Also Read</h3>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 24 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 16 }}>
                       {[1, 2, 3].map(i => (
                         <motion.div key={i} whileHover={{ y: -12 }} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${COLORS.border}`, borderRadius: 32, padding: "20px", cursor: "pointer" }}>
                            <div style={{ borderRadius: 20, overflow: "hidden", aspectRatio: "3/4", marginBottom: 20 }}>
@@ -802,12 +896,12 @@ export default function StoryPage() {
                 </div>
 
                 {/* SIDEBAR AREA */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
                   
                   {/* Story Stats Panel */}
-                  <div style={{ background: "rgba(255,255,255,0.03)", border: `1.5px solid ${COLORS.border}`, borderRadius: 40, padding: "32px", boxShadow: "0 30px 60px rgba(0,0,0,0.3)" }}>
-                    <h4 style={{ margin: "0 0 24px", fontSize: 18, fontWeight: 900, color: "#FFF", display: "flex", alignItems: "center", gap: 10 }}><BarChart3 size={20} color={COLORS.purple} /> Story Analytics</h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                  <div style={{ background: "rgba(255,255,255,0.03)", border: `1.5px solid ${COLORS.border}`, borderRadius: 20, padding: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+                    <h4 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 800, color: "#FFF", display: "flex", alignItems: "center", gap: 8 }}><BarChart3 size={16} color={COLORS.purple} /> Story Analytics</h4>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {[
                         { l: "Choice Complexity", v: "High", c: COLORS.rose },
                         { l: "Branch Count", v: "32 Paths", c: COLORS.purple },
@@ -815,16 +909,16 @@ export default function StoryPage() {
                         { l: "Reader Mood", v: "Intense", c: COLORS.gold },
                       ].map(s => (
                         <div key={s.l} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: COLORS.textMuted }}>{s.l}</span>
-                          <span style={{ fontSize: 14, fontWeight: 900, color: s.c }}>{s.v}</span>
+                          <span style={{ fontSize: 13, fontWeight: 500, color: COLORS.textMuted }}>{s.l}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: s.c }}>{s.v}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Community Goals */}
-                  <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%)", border: `1.5px solid ${COLORS.border}`, borderRadius: 40, padding: "32px", boxShadow: "0 30px 60px rgba(0,0,0,0.3)" }}>
-                    <h4 style={{ margin: "0 0 24px", fontSize: 18, fontWeight: 900, color: "#FFF", display: "flex", alignItems: "center", gap: 10 }}><Trophy size={20} color={COLORS.gold} /> Community Goals</h4>
+                  <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%)", border: `1.5px solid ${COLORS.border}`, borderRadius: 20, padding: "24px", boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+                    <h4 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 800, color: "#FFF", display: "flex", alignItems: "center", gap: 8 }}><Trophy size={16} color={COLORS.gold} /> Community Goals</h4>
                     <CommunityMilestones />
                   </div>
 
@@ -834,38 +928,38 @@ export default function StoryPage() {
                   <div style={{ 
                     background: "linear-gradient(135deg, rgba(244,63,142,0.08) 0%, rgba(139, 92, 246, 0.04) 100%)", 
                     border: `1.5px solid ${COLORS.border}`, 
-                    borderRadius: 40, 
-                    padding: "40px", 
-                    boxShadow: "0 30px 60px rgba(0,0,0,0.3)",
+                    borderRadius: 24, 
+                    padding: "24px", 
+                    boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
                     position: "relative",
                     overflow: "hidden"
                   }}>
-                    <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, background: `${COLORS.rose}15`, filter: "blur(40px)", borderRadius: "50%" }} />
+                    <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, background: `${COLORS.rose}15`, filter: "blur(30px)", borderRadius: "50%" }} />
                     
-                    <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 32 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
                       <div style={{ position: "relative" }}>
-                        <Avatar initials={story.authorName?.[0] || "A"} size={72} color={COLORS.rose} />
-                        <div style={{ position: "absolute", bottom: -2, right: -2, width: 24, height: 24, borderRadius: "50%", background: COLORS.emerald, border: `3px solid #0F0D1E`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <Check size={14} color="#FFF" />
+                        <Avatar initials={story.authorName?.[0] || "A"} size={48} color={COLORS.rose} />
+                        <div style={{ position: "absolute", bottom: -2, right: -2, width: 18, height: 18, borderRadius: "50%", background: COLORS.emerald, border: `2px solid #0F0D1E`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Check size={10} color="#FFF" />
                         </div>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 900, fontSize: 22, color: "#FFF", letterSpacing: -0.5 }}>{story.authorName}</div>
-                        <div style={{ fontSize: 14, color: COLORS.rose, fontWeight: 700, marginTop: 4, textTransform: "uppercase", letterSpacing: 1.5 }}>Master Architect</div>
+                        <div style={{ fontWeight: 800, fontSize: 18, color: "#FFF", letterSpacing: -0.5 }}>{story.authorName}</div>
+                        <div style={{ fontSize: 12, color: COLORS.rose, fontWeight: 700, marginTop: 2, textTransform: "uppercase", letterSpacing: 1 }}>Master Architect</div>
                       </div>
                     </div>
                     
-                    <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 14, lineHeight: 1.6, marginBottom: 32 }}>Creating immersive worlds where your decisions define the future. Join the community of seekers.</p>
+                    <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, lineHeight: 1.5, marginBottom: 24 }}>Creating immersive worlds where your decisions define the future. Join the community of seekers.</p>
                     
-                    <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ display: "flex", gap: 10, flexDirection: isMobile ? "column" : "row" }}>
                       <button 
                         onClick={() => { setIsFollowing(!isFollowing); triggerToast(isFollowing ? "No longer following" : "Following architect!"); }} 
-                        style={{ flex: 1, padding: "18px", borderRadius: 20, background: isFollowing ? "rgba(255,255,255,0.06)" : COLORS.purple, border: `1.5px solid ${isFollowing ? COLORS.border : COLORS.purple}`, color: "#FFF", fontWeight: 900, cursor: "pointer", fontSize: 16, transition: 'all 0.3s', boxShadow: isFollowing ? 'none' : `0 10px 20px ${COLORS.purple}30` }}
+                        style={{ flex: 1, padding: "12px 16px", borderRadius: 12, background: isFollowing ? "rgba(255,255,255,0.06)" : COLORS.purple, border: `1.5px solid ${isFollowing ? COLORS.border : COLORS.purple}`, color: "#FFF", fontWeight: 700, cursor: "pointer", fontSize: 14, transition: 'all 0.3s', boxShadow: isFollowing ? 'none' : `0 10px 20px ${COLORS.purple}30` }}
                       >
                         {isFollowing ? "Bonded" : "Follow Architect"}
                       </button>
-                      <button style={{ width: 56, height: 56, borderRadius: 20, background: "rgba(255,255,255,0.06)", border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", cursor: "pointer" }}>
-                         <Share2 size={20} />
+                      <button style={{ width: isMobile ? "100%" : 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.06)", border: `1px solid ${COLORS.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: "#FFF", cursor: "pointer" }}>
+                         <Share2 size={16} /> {isMobile && <span style={{ marginLeft: 8, fontSize: 14, fontWeight: 700 }}>Share</span>}
                       </button>
                     </div>
                   </div>
