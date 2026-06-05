@@ -6,6 +6,7 @@ const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const redis = require('../redisClient');
 const crypto = require('crypto');
+const CONFIG = require('../story_engine.config.json');
 
 // Get all stories
 router.get('/', async (req, res) => {
@@ -383,15 +384,16 @@ router.post('/generate-episode', auth, async (req, res) => {
                 ...storyPanels.map((p, idx) => ({
                     taskType: "imageInference",
                     taskUUID: crypto.randomUUID(),
-                    model: "runware:100@1",
-                    positivePrompt: `score_9, score_8_up, masterpiece, best quality, beautiful manhwa webtoon art, official webtoon style, dynamic composition, dramatic cinematic lighting, highly detailed character design, clean linework, ${p.imagePrompt}`,
-                    width: 512,
-                    height: 768,
-                    numberResults: 1,
-                    outputFormat: "JPG",
+                    model: CONFIG.engine.model || "runware:100@1",
+                    positivePrompt: `${CONFIG.storyDefaults.basePositivePrompt || "masterpiece, ultra-detailed Korean manhwa webtoon art"}, ${p.imagePrompt}`,
+                    negativePrompt: CONFIG.imageSettings.negativePrompt || "blurry, low quality, distorted",
+                    width: CONFIG.imageSettings.width || 704,
+                    height: CONFIG.imageSettings.height || 1024,
+                    numberResults: CONFIG.imageSettings.numberResults || 1,
+                    outputFormat: CONFIG.imageSettings.outputFormat || "WEBP",
                     seed: Math.floor(Math.random() * 2147483647),
-                    CFGScale: 3.5,
-                    steps: 6
+                    CFGScale: CONFIG.imageSettings.CFGScale || 7,
+                    steps: CONFIG.imageSettings.steps || 28
                 }))
             ];
 
