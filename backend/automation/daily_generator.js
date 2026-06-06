@@ -104,8 +104,14 @@ async function generateNewStory() {
 
 async function addEpisodeToExisting(story) {
     console.log(`📝 Adding episode ${story.episodes.length + 1} to "${story.title}"...`);
+    
+    // RAG Context from Reader Demands
+    const demandsContext = (story.readerDemands && story.readerDemands.length > 0) 
+        ? `\nCRITICAL FAN DEMANDS TO INCORPORATE: ${story.readerDemands.slice(-5).join(' | ')}`
+        : '';
+
     const prompt = `You are writing episode ${story.episodes.length + 1} for the story titled "${story.title}".
-    Genre: ${story.genre}.
+    Genre: ${story.genre}. ${demandsContext}
     Output JSON:
     - title: "Episode ${story.episodes.length + 1}"
     - panels: Array of 3 objects { prompt: "detailed image prompt", text: "narration/dialogue", speaker: "Narration or Character Name" }
@@ -145,6 +151,10 @@ async function addEpisodeToExisting(story) {
             console.log(`🏆 Story "${story.title}" has reached its target of ${story.targetEpisodes} episodes and is now COMPLETED.`);
         }
 
+        // Reset demands after fulfilling them
+        story.nextEpisodeVotes = 0;
+        story.readerDemands = [];
+
         await story.save();
         console.log(`✅ Added episode to ${story.title}`);
     } catch (e) {
@@ -153,17 +163,36 @@ async function addEpisodeToExisting(story) {
 }
 
 async function runDailyTasks() {
-    console.log("🚀 Starting daily automated generation task...");
+    console.log("🚀 Starting Demand-Driven automated generation task...");
 
-    // 1. Generate 1 brand new story
-    await generateNewStory();
+    const today = new Date().getDay();
+    // 1. Weekly Binge Story (0 = Sunday)
+    if (today === 0) {
+        console.log("📅 It's Sunday! Generating the Weekly Binge Story...");
+        const newStoryId = await generateNewStory();
+        // Since generateNewStory saves a new story but doesn't return the object, we'll fetch the latest one
+        const weeklyStory = await Story.findOne().sort({ createdAt: -1 });
+        if (weeklyStory && !weeklyStory.isCompleted) {
+            console.log(`🚀 Generating remaining episodes for weekly story: ${weeklyStory.title}`);
+            const epsToGenerate = weeklyStory.targetEpisodes - weeklyStory.episodes.length;
+            for (let i = 0; i < epsToGenerate; i++) {
+                await addEpisodeToExisting(weeklyStory);
+            }
+        }
+    } else {
+        console.log("📅 Not Sunday. Skipping weekly new story generation.");
+    }
 
-    // 2. Add 1 episode to existing active stories
-    const activeStories = await Story.find({ isCompleted: { $ne: true } });
-    console.log(`Found ${activeStories.length} active stories to update.`);
+    // 2. Demand-Driven Episodes
+    // Only update stories that are incomplete AND have at least 10 votes
+    const activeStories = await Story.find({ 
+        isCompleted: { $ne: true },
+        nextEpisodeVotes: { $gte: 10 } 
+    });
+    
+    console.log(`Found ${activeStories.length} active stories that reached the 10-vote demand threshold.`);
 
     for (const story of activeStories) {
-        // Double check condition
         if (!story.targetEpisodes) {
             story.targetEpisodes = Math.floor(Math.random() * 11) + 10;
         }
@@ -175,7 +204,7 @@ async function runDailyTasks() {
         }
     }
 
-    console.log("🏁 Daily automated generation task completed.");
+    console.log("🏁 Demand-Driven automated generation task completed.");
 }
 
 module.exports = { runDailyTasks };

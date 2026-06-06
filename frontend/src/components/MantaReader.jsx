@@ -284,6 +284,8 @@ export default function MantaReader() {
   const [targetLanguage, setTargetLanguage] = useState('English');
   const [isTranslating, setIsTranslating] = useState(false);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
+  const [demandText, setDemandText] = useState('');
+  const [demandSubmitted, setDemandSubmitted] = useState(false);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -313,6 +315,18 @@ export default function MantaReader() {
       }
     } finally {
       setGeneratingEp(false);
+    }
+  };
+
+  const handleDemandSubmit = async () => {
+    if (!demandText.trim()) return;
+    try {
+      await axios.post(`/api/stories/${storyId}/demand`, { demand: demandText });
+      setToast("✨ Demand submitted! The AI will use this if voted high enough.");
+      setDemandSubmitted(true);
+      setDemandText('');
+    } catch (err) {
+      setToast("Failed to submit demand.");
     }
   };
 
@@ -784,13 +798,29 @@ export default function MantaReader() {
               </button>
             ) : (
               <>
-                <button
-                  onClick={handleGenerateEpisode}
-                  disabled={generatingEp}
-                  style={{ flex: 2, padding: '18px', borderRadius: 12, background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.rose})`, color: 'white', border: 'none', fontSize: 16, fontWeight: 900, cursor: generatingEp ? 'default' : 'pointer', opacity: generatingEp ? 0.7 : 1 }}
-                >
-                  {generatingEp ? 'Generating...' : '✦ Generate Next Episode'}
-                </button>
+                <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {!demandSubmitted ? (
+                    <>
+                      <input 
+                        type="text" 
+                        value={demandText}
+                        onChange={e => setDemandText(e.target.value)}
+                        placeholder="What should happen next?..." 
+                        style={{ padding: '16px', borderRadius: 12, background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', fontSize: 15, outline: 'none' }}
+                      />
+                      <button
+                        onClick={handleDemandSubmit}
+                        style={{ padding: '14px', borderRadius: 12, background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.rose})`, color: 'white', border: 'none', fontSize: 16, fontWeight: 900, cursor: 'pointer' }}
+                      >
+                        ✦ Vote & Demand Next Episode
+                      </button>
+                    </>
+                  ) : (
+                    <div style={{ padding: '18px', borderRadius: 12, background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: 16, fontWeight: 800 }}>
+                      ✓ Demand Submitted!
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={() => navigate(`/story/${storyId}`)}
                   style={{ flex: 1, padding: '18px', borderRadius: 12, background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}

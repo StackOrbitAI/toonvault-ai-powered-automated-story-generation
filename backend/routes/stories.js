@@ -583,4 +583,23 @@ Format: { "panels": [{ "text": "..." }], "choices": [{ "text": "..." }] }`;
     }
 });
 
+// Demand next episode
+router.post('/:id/demand', async (req, res) => {
+    try {
+        const story = await Story.findById(req.params.id);
+        if (!story) return res.status(404).json({ message: 'Story not found' });
+        
+        const { demand } = req.body;
+        story.nextEpisodeVotes += 1;
+        if (demand && demand.trim() !== '') {
+            story.readerDemands.push(demand);
+        }
+        await story.save();
+        res.json({ message: 'Demand saved', nextEpisodeVotes: story.nextEpisodeVotes });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;
