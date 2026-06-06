@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, useScroll, useSpring, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Share2, Heart, MessageSquare, BookOpen, Star, MoreVertical, List, ThumbsUp, Flame, ShieldAlert, Bookmark, ArrowRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Share2, Heart, MessageSquare, BookOpen, Star, MoreVertical, List, ThumbsUp, Flame, ShieldAlert, Bookmark, ArrowRight, Sparkles, Play, VolumeX, Volume2 } from 'lucide-react';
 import axios from 'axios';
+import { api } from '../api';
 
 const COLORS = {
   bg: "#050408",
@@ -279,6 +280,37 @@ export default function MantaReader() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const epNum = parseInt(queryParams.get('ep')) || 1;
+  const [generatingEp, setGeneratingEp] = useState(false);
+  const [targetLanguage, setTargetLanguage] = useState('English');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [isBgmPlaying, setIsBgmPlaying] = useState(false);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+        if (isBgmPlaying) {
+            audioRef.current.play().catch(e => console.log("Audio play prevented"));
+        } else {
+            audioRef.current.pause();
+        }
+    }
+  }, [isBgmPlaying]);
+
+  const handleGenerateEpisode = async () => {
+    setGeneratingEp(true);
+    setToast("Generating next episode... This may take a moment.");
+    try {
+      await api.generateEpisode(storyId, "");
+      setToast("✨ Episode generated successfully!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (e) {
+      setToast("Failed to generate episode.");
+    } finally {
+      setGeneratingEp(false);
+    }
+  };
 
   useEffect(() => {
     if (toast) {
@@ -315,15 +347,18 @@ export default function MantaReader() {
             s.displayPanels = ep.panels;
             s.displayTitle = ep.title || `Episode ${ep.number}`;
             s.displayContent = ep.content;
+            s.displayChoices = ep.choices || [];
           } else {
             s.displayPanels = s.panels;
             s.displayTitle = 'Episode 1';
             s.displayContent = s.content;
+            s.displayChoices = s.episodes?.[0]?.choices || [];
           }
         } else {
           s.displayPanels = s.panels;
           s.displayTitle = 'Episode 1';
           s.displayContent = s.content;
+          s.displayChoices = s.episodes?.[0]?.choices || [];
         }
         setStory(s);
       } catch (err) {
@@ -382,8 +417,58 @@ export default function MantaReader() {
 
   const isQuoteStory = story.genre?.toLowerCase() === 'quotes';
 
+  const handleVote = async (index) => {
+    try {
+      const res = await api.voteEpisode(storyId, epNum, index);
+      setToast("✨ Vote recorded! " + res.data.message);
+      // Optimistically update choices
+      setStory(prev => ({ ...prev, displayChoices: res.data.choices }));
+    } catch (e) {
+      setToast(e.response?.data?.message || "Failed to vote. Maybe you already voted?");
+    }
+  };
+
+  const handleTranslate = async (lang) => {
+    setTargetLanguage(lang);
+    if (lang === 'English') {
+      window.location.reload();
+      return;
+    }
+    
+    setIsTranslating(true);
+    setToast(`Translating to ${lang}...`);
+    try {
+      const res = await api.translateEpisode(storyId, epNum, lang);
+      
+      const newDisplayContent = JSON.stringify(
+        parsedContent.map((p, idx) => ({ ...p, text: res.data.translatedPanels[idx]?.text || p.text }))
+      );
+      
+      setStory(prev => ({
+        ...prev,
+        displayContent: newDisplayContent,
+        displayChoices: prev.displayChoices?.map((c, idx) => ({ ...c, text: res.data.translatedChoices[idx]?.text || c.text }))
+      }));
+      setToast(`✨ Translated to ${lang}!`);
+    } catch (e) {
+      setToast("Translation failed. Please try again.");
+      setTargetLanguage('English');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const totalVotes = story.displayChoices?.reduce((sum, c) => sum + (c.votes || 0), 0) || 0;
+
   return (
     <div style={{ background: COLORS.bg, minHeight: '100vh', color: COLORS.text, fontFamily: "'Inter', sans-serif" }}>
+
+      <audio 
+        ref={audioRef} 
+        src="https://cdn.pixabay.com/audio/2022/10/25/audio_248e89fce1.mp3" 
+        loop 
+        volume={0.2} 
+      />
 
       {/* ═══ TOAST NOTIFICATION ═══ */}
       <AnimatePresence>
@@ -462,6 +547,41 @@ export default function MantaReader() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button 
+            onClick={() => navigate(`/reel/${storyId}?ep=${epNum}`)}
+            style={{ 
+              background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.rose})`, 
+              border: 'none', color: 'white', padding: '6px 14px', borderRadius: 12, 
+              cursor: 'pointer', fontSize: 13, fontWeight: 800, display: 'flex', 
+              alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(124,58,237,0.3)'
+            }}
+          >
+            <Play size={14} fill="currentColor" /> Watch as Reel
+          </button>
+          <button 
+            onClick={() => setIsBgmPlaying(!isBgmPlaying)}
+            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: 40, height: 40, borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            {isBgmPlaying ? <Volume2 size={20} /> : <VolumeX size={20} />}
+          </button>
+          <select 
+            value={targetLanguage} 
+            onChange={(e) => handleTranslate(e.target.value)}
+            disabled={isTranslating}
+            style={{ 
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', 
+              padding: '6px 12px', borderRadius: 12, cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, outline: 'none', appearance: 'none',
+              opacity: isTranslating ? 0.5 : 1
+            }}
+          >
+            <option value="English" style={{ color: 'black' }}>EN</option>
+            <option value="Hindi" style={{ color: 'black' }}>HI</option>
+            <option value="Spanish" style={{ color: 'black' }}>ES</option>
+            <option value="Japanese" style={{ color: 'black' }}>JA</option>
+            <option value="Korean" style={{ color: 'black' }}>KO</option>
+            <option value="French" style={{ color: 'black' }}>FR</option>
+          </select>
           <button style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: 40, height: 40, borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Share2 size={20} />
           </button>
@@ -513,99 +633,85 @@ export default function MantaReader() {
         </div>
 
         {/* ═══ INTERACTIVE CHOICES ═══ */}
-        <div style={{
-          padding: '80px 24px',
-          background: 'linear-gradient(to bottom, #050408, #0D0B1A)',
-          borderTop: `1px solid ${COLORS.border}`
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 12 }}>
-              <div style={{ width: 60, height: 1, background: `linear-gradient(to right, transparent, ${COLORS.accent})` }} />
-              <span style={{ fontSize: 14, fontWeight: 900, color: COLORS.accent, letterSpacing: 4, textTransform: 'uppercase' }}>Forge Your Destiny</span>
-              <div style={{ width: 60, height: 1, background: `linear-gradient(to left, transparent, ${COLORS.accent})` }} />
+        {story.displayChoices && story.displayChoices.length > 0 && !hasNext && (
+          <div style={{
+            padding: '80px 24px',
+            background: 'linear-gradient(to bottom, #050408, #0D0B1A)',
+            borderTop: `1px solid ${COLORS.border}`
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 12 }}>
+                <div style={{ width: 60, height: 1, background: `linear-gradient(to right, transparent, ${COLORS.accent})` }} />
+                <span style={{ fontSize: 14, fontWeight: 900, color: COLORS.accent, letterSpacing: 4, textTransform: 'uppercase' }}>Forge Your Destiny</span>
+                <div style={{ width: 60, height: 1, background: `linear-gradient(to left, transparent, ${COLORS.accent})` }} />
+              </div>
+              <h2 style={{ fontSize: 32, fontWeight: 900, color: 'white', margin: 0 }}>What happens next?</h2>
+              <p style={{ color: COLORS.textDim, marginTop: 8 }}>Vote for the next episode's path. The winning choice will be generated tomorrow!</p>
             </div>
-            <h2 style={{ fontSize: 32, fontWeight: 900, color: 'white', margin: 0 }}>What happens next?</h2>
-          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, maxWidth: 900, margin: '0 auto' }}>
-            {[
-              { id: 'A', title: 'Protect the Secret', desc: 'Keep the truth hidden a little longer.', popular: true, votes: '42%' },
-              { id: 'B', title: 'Follow Your Heart', desc: 'Confess what you have been holding in.', votes: '28%' },
-              { id: 'C', title: 'Chase the Truth', desc: 'Dig deeper, no matter the consequence.', votes: '18%' },
-            ].map((choice) => (
-              <motion.button
-                key={choice.id}
-                onClick={() => setToast(`✨ Storyline Unlocked! You've unlocked Path ${choice.id}.`)}
-                whileHover={{ y: -8, boxShadow: `0 12px 30px rgba(124, 58, 237, 0.2)` }}
-                whileTap={{ scale: 0.97 }}
-                style={{
-                  padding: 24, background: 'rgba(255,255,255,0.02)', border: `1px solid ${COLORS.border}`,
-                  borderRadius: 24, textAlign: 'left', cursor: 'pointer', color: 'white',
-                  display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', overflow: 'hidden'
-                }}
-              >
-                {choice.popular && <div style={{ position: 'absolute', top: 0, right: 0, padding: '6px 14px', background: COLORS.rose, color: 'white', fontSize: 10, fontWeight: 900, borderBottomLeftRadius: 16 }}>POPULAR</div>}
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: COLORS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>
-                  {choice.id}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 6 }}>{choice.title}</div>
-                  <p style={{ margin: 0, fontSize: 13, color: COLORS.textDim, lineHeight: 1.5 }}>{choice.desc}</p>
-                </div>
-                <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.accent }}>{choice.votes} of readers</div>
-                  <ArrowRight size={16} color={COLORS.accent} />
-                </div>
-              </motion.button>
-            ))}
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              style={{
-                padding: 24, borderRadius: 24, border: `1px dashed ${COLORS.accent}66`,
-                background: 'rgba(124, 58, 237, 0.02)', color: COLORS.textDim, textAlign: 'center',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer'
-              }}
-            >
-              <div style={{ width: 40, height: 40, borderRadius: '50%', border: `2px dashed ${COLORS.accent}66`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Sparkles size={20} color={COLORS.accent} />
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 15, color: 'white' }}>Write Your Own Turn</div>
-                <div style={{ fontSize: 11 }}>Submit a custom twist for this scene</div>
-              </div>
-            </motion.button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20, maxWidth: 900, margin: '0 auto' }}>
+              {story.displayChoices.map((choice, idx) => {
+                const isMostPopular = totalVotes > 0 && choice.votes === Math.max(...story.displayChoices.map(c => c.votes || 0));
+                const pct = totalVotes > 0 ? Math.round(((choice.votes || 0) / totalVotes) * 100) : 0;
+                return (
+                  <motion.button
+                    key={idx}
+                    onClick={() => handleVote(idx)}
+                    whileHover={{ y: -8, boxShadow: `0 12px 30px rgba(124, 58, 237, 0.2)` }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{
+                      padding: 24, background: 'rgba(255,255,255,0.02)', border: `1px solid ${COLORS.border}`,
+                      borderRadius: 24, textAlign: 'left', cursor: 'pointer', color: 'white',
+                      display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', overflow: 'hidden'
+                    }}
+                  >
+                    {isMostPopular && totalVotes > 0 && <div style={{ position: 'absolute', top: 0, right: 0, padding: '6px 14px', background: COLORS.rose, color: 'white', fontSize: 10, fontWeight: 900, borderBottomLeftRadius: 16 }}>POPULAR</div>}
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: COLORS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>
+                      {String.fromCharCode(65 + idx)}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 6 }}>{choice.text}</div>
+                    </div>
+                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.accent }}>{pct}% of readers ({choice.votes || 0} votes)</div>
+                      <ArrowRight size={16} color={COLORS.accent} />
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ═══ FAN CHOICE STATS ═══ */}
-        <div style={{ padding: '60px 24px', background: '#050408', borderTop: `1px solid ${COLORS.border}` }}>
-          <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', gap: 24, alignItems: 'stretch', flexWrap: 'wrap' }}>
-            <div style={{ flex: 2, minWidth: 300, background: 'rgba(255,255,255,0.02)', borderRadius: 24, padding: 24, border: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 900, color: COLORS.accent, letterSpacing: 1 }}>FAN CHOICE REAL-TIME</span>
-                <span style={{ fontSize: 11, color: COLORS.textDim, fontWeight: 700 }}>28,342 VOTES</span>
+        {story.displayChoices && story.displayChoices.length > 0 && (
+          <div style={{ padding: '60px 24px', background: '#050408', borderTop: `1px solid ${COLORS.border}` }}>
+            <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', gap: 24, alignItems: 'stretch', flexWrap: 'wrap' }}>
+              <div style={{ flex: 2, minWidth: 300, background: 'rgba(255,255,255,0.02)', borderRadius: 24, padding: 24, border: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, fontWeight: 900, color: COLORS.accent, letterSpacing: 1 }}>FAN CHOICE REAL-TIME</span>
+                  <span style={{ fontSize: 11, color: COLORS.textDim, fontWeight: 700 }}>{totalVotes} VOTES</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {story.displayChoices.map((v, idx) => {
+                    const pct = totalVotes > 0 ? Math.round(((v.votes || 0) / totalVotes) * 100) : 0;
+                    const colors = [COLORS.accent, 'rgba(124, 58, 237, 0.4)', 'rgba(124, 58, 237, 0.2)'];
+                    return (
+                      <div key={idx} style={{ position: 'relative', height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.03)', overflow: 'hidden' }}>
+                        <motion.div
+                          initial={{ width: 0 }}
+                          whileInView={{ width: `${pct}%` }}
+                          transition={{ duration: 1, ease: 'easeOut' }}
+                          style={{ height: '100%', background: colors[idx % colors.length], display: 'flex', alignItems: 'center', padding: '0 12px' }}
+                        >
+                          {pct > 5 && <span style={{ fontSize: 11, fontWeight: 900, color: 'white' }}>{String.fromCharCode(65 + idx)} {pct}%</span>}
+                        </motion.div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
-                  { id: 'A', pct: 42, color: COLORS.accent },
-                  { id: 'B', pct: 28, color: 'rgba(124, 58, 237, 0.4)' },
-                  { id: 'C', pct: 18, color: 'rgba(124, 58, 237, 0.2)' },
-                  { id: 'D', pct: 12, color: 'rgba(124, 58, 237, 0.1)' },
-                ].map(v => (
-                  <div key={v.id} style={{ position: 'relative', height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.03)', overflow: 'hidden' }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${v.pct}%` }}
-                      transition={{ duration: 1, ease: 'easeOut' }}
-                      style={{ height: '100%', background: v.color, display: 'flex', alignItems: 'center', padding: '0 12px' }}
-                    >
-                      <span style={{ fontSize: 11, fontWeight: 900, color: 'white' }}>{v.id} {v.pct}%</span>
-                    </motion.div>
-                  </div>
-                ))}
-              </div>
-            </div>
+
 
             <button style={{
               flex: 1, minWidth: 200, background: 'rgba(124, 58, 237, 0.05)', border: `1px solid ${COLORS.accent}44`,
@@ -626,6 +732,7 @@ export default function MantaReader() {
             </button>
           </div>
         </div>
+        )}
 
         {/* ═══ END OF EPISODE ═══ */}
         <div style={{ padding: '80px 20px', textAlign: 'center', background: 'linear-gradient(to bottom, #0A0914, #12101F)' }}>
@@ -665,12 +772,21 @@ export default function MantaReader() {
                 Next Episode →
               </button>
             ) : (
-              <button
-                onClick={() => navigate(`/story/${storyId}`)}
-                style={{ flex: 2, padding: '18px', borderRadius: 12, background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}
-              >
-                Go to List
-              </button>
+              <>
+                <button
+                  onClick={handleGenerateEpisode}
+                  disabled={generatingEp}
+                  style={{ flex: 2, padding: '18px', borderRadius: 12, background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.rose})`, color: 'white', border: 'none', fontSize: 16, fontWeight: 900, cursor: generatingEp ? 'default' : 'pointer', opacity: generatingEp ? 0.7 : 1 }}
+                >
+                  {generatingEp ? 'Generating...' : '✦ Generate Next Episode'}
+                </button>
+                <button
+                  onClick={() => navigate(`/story/${storyId}`)}
+                  style={{ flex: 1, padding: '18px', borderRadius: 12, background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  List
+                </button>
+              </>
             )}
           </div>
         </div>

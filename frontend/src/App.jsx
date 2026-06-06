@@ -5,6 +5,7 @@ import ToonVaultHome from './components/ToonVaultHome';
 import Reader from './components/Reader';
 import StoryPage from './components/StoryPage';
 import MantaReader from './components/MantaReader';
+import ReelPlayer from './components/ReelPlayer';
 
 // Mock data for StoryPage (can be replaced by API fetch inside StoryPage)
 const STORIES = [
@@ -124,6 +125,7 @@ function App() {
           {/* Public Reader */}
           <Route path="/story/:id" element={isMaintenance ? <MaintenancePage /> : <StoryPage stories={STORIES} />} />
           <Route path="/manta/:storyId" element={isMaintenance ? <MaintenancePage /> : <MantaReader />} />
+          <Route path="/reel/:storyId" element={isMaintenance ? <MaintenancePage /> : <ReelPlayer />} />
           
           {/* Auth - Allow admin portal even in maintenance for emergency fixes */}
           <Route path="/user" element={isMaintenance ? <MaintenancePage /> : <Login type="user" />} />

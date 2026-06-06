@@ -279,89 +279,42 @@ function DashboardPage({ setPage }) {
 
       {/* Charts Row */}
       <div className="chart-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 14, marginBottom: 24 }}>
-        {/* Revenue Chart (SVG simulated) */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px 22px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>Revenue & User Growth</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {["7D", "1M", "3M", "1Y"].map((t, i) => (
-                <button key={t} style={{
-                  padding: "4px 10px", borderRadius: 8, border: "none", fontSize: 11, fontWeight: 600, cursor: "pointer",
-                  background: i === 1 ? "rgba(139,92,246,0.15)" : "transparent",
-                  color: i === 1 ? C.plum2 : C.muted,
-                }}>{t}</button>
-              ))}
+        {/* Revenue & Growth Summary */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "24px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>Growth Summary (Last 30 Days)</div>
+          <div style={{ display: "flex", gap: 20 }}>
+            <div style={{ flex: 1, padding: "20px", background: "rgba(139,92,246,0.1)", borderRadius: 12, border: `1px solid rgba(139,92,246,0.2)` }}>
+              <div style={{ fontSize: 13, color: C.plum2, marginBottom: 8, fontWeight: 600 }}>New Users</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: C.text }}>+1,248</div>
             </div>
-          </div>
-          {/* Simple SVG Chart */}
-          <svg viewBox="0 0 500 160" style={{ width: "100%", height: 160 }}>
-            <defs>
-              <linearGradient id="lineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient id="roseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#F43F8E" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#F43F8E" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            {/* Grid lines */}
-            {[0, 40, 80, 120, 160].map(y => (
-              <line key={y} x1="0" y1={y} x2="500" y2={y} stroke={C.border} strokeWidth="0.5" />
-            ))}
-            {/* Revenue area */}
-            <path d="M0,140 C60,130 100,100 140,90 C180,80 220,70 260,55 C300,40 340,35 380,25 C420,15 460,18 500,10 L500,160 L0,160 Z"
-              fill="url(#lineGrad)" />
-            <path d="M0,140 C60,130 100,100 140,90 C180,80 220,70 260,55 C300,40 340,35 380,25 C420,15 460,18 500,10"
-              fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" />
-            {/* Users area */}
-            <path d="M0,155 C60,148 100,138 140,128 C180,118 220,110 260,100 C300,90 340,80 380,65 C420,50 460,45 500,38 L500,160 L0,160 Z"
-              fill="url(#roseGrad)" />
-            <path d="M0,155 C60,148 100,138 140,128 C180,118 220,110 260,100 C300,90 340,80 380,65 C420,50 460,45 500,38"
-              fill="none" stroke="#F43F8E" strokeWidth="2" strokeDasharray="5,3" strokeLinecap="round" />
-            {/* Labels */}
-            {["Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr"].map((m, i) => (
-              <text key={m} x={i * 64 + 20} y={155} fill={C.muted2} fontSize="10">{m}</text>
-            ))}
-          </svg>
-          <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}>
-              <div style={{ width: 20, height: 2, background: C.plum, borderRadius: 1 }} /> Revenue
+            <div style={{ flex: 1, padding: "20px", background: "rgba(16,185,129,0.1)", borderRadius: 12, border: `1px solid rgba(16,185,129,0.2)` }}>
+              <div style={{ fontSize: 13, color: C.green, marginBottom: 8, fontWeight: 600 }}>Net Revenue</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: C.text }}>+$4,200</div>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.muted }}>
-              <div style={{ width: 20, height: 2, background: C.rose, borderRadius: 1, borderTop: "2px dashed" }} /> Users
+            <div style={{ flex: 1, padding: "20px", background: "rgba(244,63,142,0.1)", borderRadius: 12, border: `1px solid rgba(244,63,142,0.2)` }}>
+              <div style={{ fontSize: 13, color: C.rose, marginBottom: 8, fontWeight: 600 }}>Active Subs</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: C.text }}>+312</div>
             </div>
           </div>
         </div>
 
-        {/* Plan Donut */}
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "20px 22px" }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 16 }}>Plan Distribution</div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-            <svg viewBox="0 0 120 120" width={140} height={140}>
-              <circle cx="60" cy="60" r="45" fill="none" stroke={C.muted2} strokeWidth="18" strokeOpacity="0.3" />
-              <circle cx="60" cy="60" r="45" fill="none" stroke={C.plum} strokeWidth="18"
-                strokeDasharray={`${0.75 * 283} ${283}`} strokeDashoffset="0" strokeLinecap="round"
-                transform="rotate(-90 60 60)" />
-              <circle cx="60" cy="60" r="45" fill="none" stroke={C.gold} strokeWidth="18"
-                strokeDasharray={`${0.16 * 283} ${283}`} strokeDashoffset={`${-0.75 * 283}`}
-                transform="rotate(-90 60 60)" />
-              <circle cx="60" cy="60" r="45" fill="none" stroke={C.green} strokeWidth="18"
-                strokeDasharray={`${0.09 * 283} ${283}`} strokeDashoffset={`${-(0.75 + 0.16) * 283}`}
-                transform="rotate(-90 60 60)" />
-              <text x="60" y="55" textAnchor="middle" fill={C.text} fontSize="14" fontWeight="800">48.3K</text>
-              <text x="60" y="69" textAnchor="middle" fill={C.muted} fontSize="8">total users</text>
-            </svg>
-          </div>
+        {/* Plan Distribution text list */}
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "24px" }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>Plan Distribution</div>
           {[
-            { label: "Bronze (Free)", pct: "75%", color: C.plum, count: "36.2K" },
-            { label: "Silver ($5/yr)", pct: "16%", color: C.gold, count: "7.7K" },
-            { label: "Gold ($24/yr)", pct: "9%", color: C.green, count: "4.4K" },
+            { label: "Bronze (Free)", pct: "75%", color: C.plum, count: "36.2K Users" },
+            { label: "Silver ($5/yr)", pct: "16%", color: C.gold, count: "7.7K Users" },
+            { label: "Gold ($24/yr)", pct: "9%", color: C.green, count: "4.4K Users" },
           ].map(p => (
-            <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: p.color, flexShrink: 0 }} />
-              <div style={{ fontSize: 12, color: C.muted, flex: 1 }}>{p.label}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>{p.pct}</div>
+            <div key={p.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${C.borderLight}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 12, height: 12, borderRadius: 4, background: p.color }} />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{p.label}</div>
+                  <div style={{ fontSize: 12, color: C.muted }}>{p.count}</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: C.text }}>{p.pct}</div>
             </div>
           ))}
         </div>
@@ -679,19 +632,32 @@ function StoriesPage() {
     } catch (e) { alert("Failed to update story status"); }
   };
 
-  const handleAddEpisode = async (s) => {
-    const prompt = window.prompt(`Next episode for "${s.title}":\nWhat should happen next? (Leave blank for AI choice)`);
-    if (prompt === null) return;
-    
-    setGenEp(s._id || s.id);
+  const [showEpisodeModal, setShowEpisodeModal] = useState(false);
+  const [selectedStoryForEpisode, setSelectedStoryForEpisode] = useState(null);
+  const [episodePromptText, setEpisodePromptText] = useState("");
+  const [generatingEpisode, setGeneratingEpisode] = useState(false);
+
+  const handleAddEpisode = (s) => {
+    setSelectedStoryForEpisode(s);
+    setEpisodePromptText("");
+    setShowEpisodeModal(true);
+  };
+
+  const submitGenerateEpisode = async () => {
+    if (!selectedStoryForEpisode) return;
+    const storyId = selectedStoryForEpisode._id || selectedStoryForEpisode.id;
+    setGeneratingEpisode(true);
+    setGenEp(storyId);
     try {
-      await api.generateEpisode(s._id || s.id, prompt);
+      await api.generateEpisode(storyId, episodePromptText);
       alert("Next episode generated successfully!");
+      setShowEpisodeModal(false);
       const res = await api.getAdminStories();
       setStories(res.data || []);
     } catch (e) {
       alert("Failed: " + (e.response?.data?.error || e.message));
     } finally {
+      setGeneratingEpisode(false);
       setGenEp(null);
     }
   };
@@ -772,6 +738,34 @@ function StoriesPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Next Episode Modal */}
+      {showEpisodeModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: 32, width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: C.text }}>✨ Generate Next Episode</div>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 20 }}>Story: <span style={{ color: C.plum2, fontWeight: 600 }}>{selectedStoryForEpisode?.title}</span></div>
+            
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>WHAT SHOULD HAPPEN NEXT?</label>
+              <textarea 
+                value={episodePromptText} 
+                onChange={e => setEpisodePromptText(e.target.value)} 
+                rows={4}
+                placeholder="Describe the plot twist, dialogue, or narrative goals for the next episode. (Leave blank for AI choice)"
+                style={{ width: "100%", background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 14px", color: C.text, fontSize: 13, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} 
+              />
+            </div>
+            
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowEpisodeModal(false)} style={{ flex: 1, padding: "12px", borderRadius: 14, background: "rgba(255,255,255,0.05)", border: `1px solid ${C.border}`, color: C.muted, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+              <button onClick={submitGenerateEpisode} disabled={generatingEpisode} style={{ flex: 2, padding: "12px", borderRadius: 14, background: "linear-gradient(135deg, #8B5CF6, #F43F8E)", border: "none", color: "white", fontWeight: 700, cursor: generatingEpisode ? "default" : "pointer", opacity: generatingEpisode ? 0.7 : 1 }}>
+                {generatingEpisode ? "Generating Episode..." : "✦ Generate Episode"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

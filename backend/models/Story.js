@@ -16,6 +16,7 @@ const StorySchema = new mongoose.Schema({
     isAgeRestricted: { type: Boolean, default: false },
     description: String,
     content: String,
+    characterSeed: { type: Number }, // To maintain visual consistency across episodes
     panels: [String], // URLs for AI images (Episode 1)
     nodes: [{
         id: { type: String, required: true },
@@ -41,6 +42,10 @@ const StorySchema = new mongoose.Schema({
         description: String,
         panels: [String],       // Direct panel image URLs for this episode
         content: String,        // JSON array of { speaker, text, imageUrl } for quote overlays
+        choices: [{             // Interactive voting options for next episode
+            text: String,
+            votes: { type: Number, default: 0 }
+        }],
         scenes: [{
             number: Number,
             title: String,

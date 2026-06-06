@@ -80,11 +80,7 @@ const ACHIEVEMENTS = [
 ];
 
 const AI_TOOLS = [
-  { icon: "🎨", label: "Panel Generator", desc: "Create manga-style panels", uses: 11, max: 20, color: C.plum },
-  { icon: "🎀", label: "Manta Creator", desc: "Premium vertical-strip stories", uses: 0, max: 5, color: C.rose },
-  { icon: "✍️", label: "Quotes & Wisdom", desc: "Aesthetic quotes with images", uses: 0, max: 50, color: "#A78BFA" },
-  { icon: "🎭", label: "Character Design", desc: "Design unique characters", uses: 4, max: 10, color: C.cyan },
-  { icon: "🗺️", label: "World Builder", desc: "Generate rich settings", uses: 2, max: 5, color: C.gold },
+  { icon: "📖", label: "Story Generator", desc: "Generate a new story instantly", uses: 0, max: 100, color: C.plum }
 ];
 
 const TRANSACTIONS = [
@@ -741,11 +737,17 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
     if (!newStory.title.trim()) return;
     setCreating(true);
     try {
-      await api.createStory(newStory);
+      await api.generateStory({
+        topic: newStory.title,
+        prompt: newStory.description,
+        images: 5,
+        category: "Story",
+        status: "draft"
+      });
       await refreshStories();
       setShowCreate(false);
       setNewStory({ title: "", genre: "", description: "", type: "Comic" });
-    } catch (e) { alert("Failed to create story"); }
+    } catch (e) { alert("Failed to generate story"); }
     finally { setCreating(false); }
   };
 
@@ -802,30 +804,34 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
       {showCreate && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: 24, padding: 32, width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 20 }}>✏️ Create New Story</div>
-            {[{label:"Title",key:"title",type:"text"},{label:"Genre",key:"genre",type:"text"},{label:"Description",key:"description",type:"textarea"}].map(f => (
-              <div key={f.key} style={{ marginBottom: 14 }}>
-                <label style={{ fontSize: 11, color: C.textDim, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>{f.label.toUpperCase()}</label>
-                {f.type === "textarea" ? (
-                  <textarea value={newStory[f.key]} onChange={e => setNewStory(p => ({...p,[f.key]:e.target.value}))} rows={3}
-                    style={{ width: "100%", background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: "10px 14px", color: C.text, fontSize: 13, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
-                ) : (
-                  <input value={newStory[f.key]} onChange={e => setNewStory(p => ({...p,[f.key]:e.target.value}))}
-                    style={{ width: "100%", background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: "10px 14px", color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
-                )}
-              </div>
-            ))}
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 11, color: C.textDim, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>TYPE</label>
-              <div style={{ display: "flex", gap: 8 }}>
-                {["Comic","Novel","Article"].map(t => (
-                  <button key={t} onClick={() => setNewStory(p => ({...p,type:t}))} style={{ flex: 1, padding: "8px", borderRadius: 10, border: `1px solid ${newStory.type===t ? C.plum : C.cardBorder}`, background: newStory.type===t ? C.plum+"22" : C.bg, color: newStory.type===t ? C.plumLight : C.textMuted, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{t}</button>
-                ))}
-              </div>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 20, color: C.text }}>✨ Generate New Story</div>
+            
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, color: C.textDim, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>STORY TITLE / TOPIC</label>
+              <input 
+                value={newStory.title} 
+                onChange={e => setNewStory(p => ({...p, title: e.target.value}))}
+                placeholder="e.g. The queen discovers betrayal..."
+                style={{ width: "100%", background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: "12px 14px", color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box" }} 
+              />
             </div>
+            
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 11, color: C.textDim, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>ADDITIONAL DETAILS (PROMPT)</label>
+              <textarea 
+                value={newStory.description} 
+                onChange={e => setNewStory(p => ({...p, description: e.target.value}))} 
+                rows={4}
+                placeholder="Describe the plot twist, characters, or narrative goals. (Optional)"
+                style={{ width: "100%", background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: "12px 14px", color: C.text, fontSize: 13, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} 
+              />
+            </div>
+            
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowCreate(false)} style={{ flex: 1, padding: "12px", borderRadius: 14, background: C.glass, border: `1px solid ${C.glassBorder}`, color: C.textMuted, cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleCreate} disabled={creating} style={{ flex: 2, padding: "12px", borderRadius: 14, background: C.gradient, border: "none", color: "white", fontWeight: 700, cursor: creating ? "default" : "pointer", opacity: creating ? 0.7 : 1 }}>{creating ? "Creating..." : `Become ${settings.site_name || 'ToonVault'} Creator`}</button>
+              <button onClick={() => setShowCreate(false)} style={{ flex: 1, padding: "12px", borderRadius: 14, background: C.glass, border: `1px solid ${C.glassBorder}`, color: C.textMuted, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+              <button onClick={handleCreate} disabled={creating} style={{ flex: 2, padding: "12px", borderRadius: 14, background: C.gradient, border: "none", color: "white", fontWeight: 700, cursor: creating ? "default" : "pointer", opacity: creating ? 0.7 : 1 }}>
+                {creating ? "Generating Story..." : "✦ Generate Story"}
+              </button>
             </div>
           </div>
         </div>
@@ -901,49 +907,45 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
         {filtered.map(s => {
           const sc = statusColor[s.status] || C.textMuted;
           return (
-            <GlassCard key={s._id} glow style={{ padding: 0, overflow: "hidden" }}>
+            <GlassCard key={s._id} glow style={{ padding: 0, overflow: "hidden", border: `1px solid ${C.cardBorder}`, borderRadius: 16 }}>
               <div style={{
-                height: 90, background: s.coverBg || "#1A1628",
-                display: "flex", alignItems: "center",
-                padding: "0 20px", gap: 16, position: "relative",
+                height: 140, background: s.coverBg || "#1A1628",
+                position: "relative",
               }}>
-                <span style={{ fontSize: 36, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {s.panels?.[0] ? <img src={s.panels[0]} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (s.coverIcon || "📖")}
-                </span>
-                <div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>{s.genre || "—"}</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: "white" }}>{s.title}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2, marginBottom: 2 }}>By {s.authorName || "Creator"}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{s.type}</div>
+                {s.panels?.[0] ? <img src={s.panels[0]} style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.6 }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>📖</div>}
+                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.95), transparent)" }} />
+                <div style={{ position: "absolute", top: 12, right: 12 }}>
+                  <Badge color={sc} bg={sc+"20"}>{s.status}</Badge>
                 </div>
-                <div style={{ position: "absolute", top: 10, right: 12 }}>
-                  <Badge color={sc}>{s.status}</Badge>
+                <div style={{ position: "absolute", bottom: 16, left: 16, right: 16 }}>
+                  <div style={{ fontSize: 11, color: C.plumLight, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>{s.genre || "Story"}</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "white", lineHeight: 1.2, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>{s.title}</div>
                 </div>
               </div>
-              <div style={{ padding: "14px 18px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 12 }}>
-                  {[
-                    { label: "Views", value: (s.views||0).toLocaleString() },
-                    { label: "Likes", value: (s.likes||0).toLocaleString() },
-                    { label: "Rating", value: s.rating ? `⭐ ${s.rating}` : "—" },
-                  ].map(m => (
-                    <div key={m.label}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{m.value}</div>
-                      <div style={{ fontSize: 10, color: C.textDim }}>{m.label}</div>
-                    </div>
-                  ))}
+              <div style={{ padding: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, paddingBottom: 16, borderBottom: `1px solid ${C.cardBorder}` }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{(s.views||0).toLocaleString()}</div>
+                    <div style={{ fontSize: 11, color: C.textDim, marginTop: 2 }}>Views</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{(s.likes||0).toLocaleString()}</div>
+                    <div style={{ fontSize: 11, color: C.textDim, marginTop: 2 }}>Likes</div>
+                  </div>
+                  <div style={{ flex: 1, textAlign: "right" }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.gold }}>{s.rating ? `⭐ ${s.rating}` : "—"}</div>
+                    <div style={{ fontSize: 11, color: C.textDim, marginTop: 2 }}>Rating</div>
+                  </div>
                 </div>
-                {s.description && <div style={{ fontSize: 11, color: C.textDim, marginBottom: 12, lineHeight: 1.5, overflow: "hidden", display:"-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{s.description}</div>}
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => navigate(`/manta/${s._id}`)} style={{ flex: 1, padding: "8px", borderRadius: 10, background: C.plum, border: "none", color: "white", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📖 Read</button>
-                  <button 
-                    onClick={() => handleAddEpisode(s)} 
-                    disabled={genEp === s._id}
-                    style={{ flex: 1, padding: "8px", borderRadius: 10, background: C.rose+"22", border: `1px solid ${C.rose}50`, color: C.rose, fontSize: 11, fontWeight: 700, cursor: "pointer" }}
-                  >
-                    {genEp === s._id ? "..." : "+ Episode"}
-                  </button>
-                  <button onClick={() => handleDelete(s._id)} disabled={deleting === s._id} style={{ padding: "8px 12px", borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#EF4444", fontSize: 11, cursor: "pointer" }}>{deleting===s._id ? "..." : "🗑"}</button>
+                  <button onClick={() => navigate(`/manta/${s._id}`)} style={{ flex: 3, padding: "12px", borderRadius: 12, background: C.gradient, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 20px ${C.plumGlow}`; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
+                  >📖 Open & Manage Episodes</button>
+                  <button onClick={() => handleDelete(s._id)} disabled={deleting === s._id} style={{ flex: 1, padding: "12px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#EF4444", fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.2)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
+                  >{deleting===s._id ? "..." : "🗑 Delete"}</button>
                 </div>
               </div>
             </GlassCard>
@@ -1021,7 +1023,6 @@ function ReadingPage() {
 // AI STUDIO PAGE
 // ═══════════════════════════════════════════════════════
 function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
-  const [selected, setSelected] = useState(0);
   const [topic, setTopic] = useState(initialPrompt || "");
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
@@ -1032,21 +1033,14 @@ function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
     if (!topic.trim()) return;
     setGenerating(true); setResult(null); setError("");
     try {
-      const tool = AI_TOOLS[selected];
-      let res;
-      if (tool.label === "Manta Creator" || tool.label === "Panel Generator" || tool.label === "Quotes & Wisdom") {
-        res = await api.generateStory({ 
-          topic, 
-          prompt: tool.label === "Quotes & Wisdom" ? `(Aesthetic Quotes) ${prompt}` : prompt, 
-          images: tool.label === "Manta Creator" ? 5 : tool.label === "Quotes & Wisdom" ? 5 : 3, 
-          category: tool.label === "Quotes & Wisdom" ? "Quotes" : "Fantasy", 
-          status: "draft" 
-        });
-        setResult(res.data.story);
-      } else {
-        res = await api.generateArticle({ topic, tone: "creative", genre: tool.label, length: "medium" });
-        setResult(res.data.article);
-      }
+      const res = await api.generateStory({ 
+        topic, 
+        prompt, 
+        images: 5, 
+        category: "Story", 
+        status: "draft" 
+      });
+      setResult(res.data.story);
       if (refreshStories) refreshStories();
     } catch (e) {
       setError(e.response?.data?.error || "Generation failed. Check AI API keys in Admin Settings.");
@@ -1057,48 +1051,26 @@ function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
     <div>
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>
-          <span style={{ background: C.gradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>✦ AI Studio</span>
+          <span style={{ background: C.gradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>✦ AI Story Generator</span>
         </h2>
-        <p style={{ fontSize: 13, color: C.textDim, margin: 0 }}>Supercharge your storytelling with AI-powered tools</p>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14, marginBottom: 28 }}>
-        {AI_TOOLS.map((tool, i) => (
-          <GlassCard key={tool.label} glow onClick={() => setSelected(i)} style={{
-            padding: "18px",
-            border: selected === i ? `1px solid ${tool.color}60` : `1px solid ${C.cardBorder}`,
-            background: selected === i ? tool.color + "12" : C.card,
-            cursor: "pointer",
-          }}>
-            <div style={{ fontSize: 28, marginBottom: 10 }}>{tool.icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>{tool.label}</div>
-            <div style={{ fontSize: 11, color: C.textDim, marginBottom: 12, lineHeight: 1.4 }}>{tool.desc}</div>
-            <ProgressBar value={tool.uses} max={tool.max} color={tool.color} thin />
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5, fontSize: 10, color: C.textDim }}>
-              <span>{tool.uses} / {tool.max} used</span>
-              <span style={{ color: tool.color, fontWeight: 600 }}>
-                {Math.round((1 - tool.uses / tool.max) * 100)}% left
-              </span>
-            </div>
-          </GlassCard>
-        ))}
+        <p style={{ fontSize: 13, color: C.textDim, margin: 0 }}>Create a new story instantly</p>
       </div>
 
       {/* Generator UI */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <GlassCard style={{ padding: "24px" }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 16 }}>
-            {AI_TOOLS[selected].icon} {AI_TOOLS[selected].label}
+            📖 Story Generator
           </div>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11, color: C.textDim, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>TOPIC / TITLE</label>
+            <label style={{ fontSize: 11, color: C.textDim, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>STORY TITLE / TOPIC</label>
             <input value={topic} onChange={e => setTopic(e.target.value)} placeholder="e.g. The queen discovers betrayal..."
               style={{ width: "100%", background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 10, padding: "10px 14px", color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box" }} />
           </div>
           <textarea
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
-            placeholder={`Additional details or style notes (optional)...`}
+            placeholder={`Additional story details or style notes (optional)...`}
             style={{
               width: "100%", height: 110, borderRadius: 12, padding: "12px 14px",
               background: C.bg, border: `1px solid ${C.cardBorder}`,
@@ -1119,7 +1091,7 @@ function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
               transition: "all 0.2s",
             }}
           >
-            {generating ? "✦ Generating..." : "✦ Generate"}
+            {generating ? "✦ Generating Story..." : "✦ Generate Story"}
           </button>
         </GlassCard>
 
@@ -1133,7 +1105,7 @@ function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
               color: C.textDim,
             }}>
               <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.4 }}>✦</div>
-              <div style={{ fontSize: 13 }}>Your generation will appear here</div>
+              <div style={{ fontSize: 13 }}>Your story will appear here</div>
             </div>
           ) : generating ? (
             <div style={{
@@ -1143,24 +1115,20 @@ function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
               border: `1px solid ${C.plum}30`,
             }}>
               <div style={{ fontSize: 36, marginBottom: 12, animation: "spin 1s linear infinite" }}>✦</div>
-              <div style={{ fontSize: 13, color: C.plumLight }}>Crafting your content...</div>
+              <div style={{ fontSize: 13, color: C.plumLight }}>Crafting your story...</div>
               <div style={{ fontSize: 11, color: C.textDim, marginTop: 6 }}>This may take 10-30 seconds</div>
             </div>
           ) : (
             <div>
               <div style={{ background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: 16, marginBottom: 14, maxHeight: 220, overflowY: "auto" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.plumLight, marginBottom: 8 }}>✓ {result?.title || "Generated"}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.plumLight, marginBottom: 8 }}>✓ {result?.title || "Story Generated"}</div>
                 <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{result?.description || result?.content || "Story generated and saved!"}</div>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => { setResult(null); setTopic(""); setPrompt(""); }} style={{ flex: 1, padding: "9px", borderRadius: 10, background: C.glass, border: `1px solid ${C.glassBorder}`, color: C.textMuted, fontSize: 12, cursor: "pointer" }}>↺ New</button>
+                <button onClick={() => { setResult(null); setTopic(""); setPrompt(""); }} style={{ flex: 1, padding: "9px", borderRadius: 10, background: C.glass, border: `1px solid ${C.glassBorder}`, color: C.textMuted, fontSize: 12, cursor: "pointer" }}>↺ New Story</button>
                 <button onClick={() => {
-                    if (result.type === 'Comic' || result.panels?.length > 0) {
-                        navigate(`/manta/${result._id}`);
-                    } else {
-                        window.location.reload();
-                    }
-                }} style={{ flex: 1, padding: "9px", borderRadius: 10, background: C.plum+"22", border: `1px solid ${C.plum}50`, color: C.plumLight, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>📖 Read Manta Style</button>
+                    navigate(`/manta/${result._id}`);
+                }} style={{ flex: 1, padding: "9px", borderRadius: 10, background: C.plum+"22", border: `1px solid ${C.plum}50`, color: C.plumLight, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>📖 Read & Manage Episodes</button>
               </div>
             </div>
           )}
@@ -1670,6 +1638,54 @@ export default function ToonVaultUserDashboard() {
   const [initialPrompt, setInitialPrompt] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [newStoryTitle, setNewStoryTitle] = useState("");
+  const [newStoryDesc, setNewStoryDesc] = useState("");
+  const [generatingStory, setGeneratingStory] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+
+  const handleGenerateHeaderStory = async () => {
+    if (!newStoryTitle.trim()) return;
+    setGeneratingStory(true);
+    setGenerationProgress(0);
+
+    // Simulate real-time progress
+    const progressInterval = setInterval(() => {
+      setGenerationProgress(prev => {
+        if (prev >= 98) return 98;
+        const increment = prev < 40 ? 4 : prev < 80 ? 2 : 0.5;
+        return prev + increment;
+      });
+    }, 1000);
+
+    try {
+      await api.generateStory({
+        topic: newStoryTitle,
+        prompt: newStoryDesc,
+        images: 5,
+        category: "Story",
+        status: "draft"
+      });
+      clearInterval(progressInterval);
+      setGenerationProgress(100);
+      
+      // Short delay so user sees 100% before closing
+      setTimeout(() => {
+        setPage("stories");
+        setShowWizard(false);
+        setNewStoryTitle("");
+        setNewStoryDesc("");
+        setGenerationProgress(0);
+      }, 600);
+    } catch (e) { 
+      clearInterval(progressInterval);
+      alert("Failed to generate story"); 
+      setGenerationProgress(0);
+    }
+    finally { 
+      setGeneratingStory(false); 
+      clearInterval(progressInterval);
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1786,14 +1802,56 @@ export default function ToonVaultUserDashboard() {
 
       <TopNav page={page} setPage={setPage} user={user} onMenuClick={() => setMobileMenuOpen(true)} setShowWizard={setShowWizard} />
       
-      <AIStoryWizard 
-        isOpen={showWizard} 
-        onClose={() => setShowWizard(false)} 
-        onFinish={(story) => {
-          setShowWizard(false);
-          setPage('ai'); // Go to AI Studio to see/edit it
-        }}
-      />
+      {/* Unified Create Story Modal */}
+      {showWizard && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: C.card, border: `1px solid ${C.cardBorder}`, borderRadius: 24, padding: 32, width: 480, boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 20, color: C.text }}>✨ Generate New Story</div>
+            
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, color: C.textDim, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>STORY TITLE / TOPIC</label>
+              <input 
+                value={newStoryTitle} 
+                onChange={e => setNewStoryTitle(e.target.value)}
+                placeholder="e.g. The queen discovers betrayal..."
+                style={{ width: "100%", background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: "12px 14px", color: C.text, fontSize: 13, outline: "none", boxSizing: "border-box" }} 
+              />
+            </div>
+            
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontSize: 11, color: C.textDim, fontWeight: 700, letterSpacing: 0.5, display: "block", marginBottom: 6 }}>ADDITIONAL DETAILS (PROMPT)</label>
+              <textarea 
+                value={newStoryDesc} 
+                onChange={e => setNewStoryDesc(e.target.value)} 
+                rows={4}
+                placeholder="Describe the plot twist, characters, or narrative goals. (Optional)"
+                style={{ width: "100%", background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: "12px 14px", color: C.text, fontSize: 13, resize: "vertical", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} 
+              />
+            </div>
+            
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowWizard(false)} disabled={generatingStory} style={{ flex: 1, padding: "12px", borderRadius: 14, background: C.glass, border: `1px solid ${C.glassBorder}`, color: C.textMuted, cursor: generatingStory ? "default" : "pointer", fontWeight: 600, opacity: generatingStory ? 0.5 : 1 }}>Cancel</button>
+              <button onClick={handleGenerateHeaderStory} disabled={generatingStory} style={{ flex: 2, padding: "12px", borderRadius: 14, background: C.gradient, border: "none", color: "white", fontWeight: 700, cursor: generatingStory ? "default" : "pointer", opacity: generatingStory ? 0.8 : 1, position: "relative", overflow: "hidden" }}>
+                {generatingStory && (
+                  <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${generationProgress}%`, background: "rgba(255,255,255,0.2)", transition: "width 0.5s ease" }} />
+                )}
+                <span style={{ position: "relative", zIndex: 1 }}>{generatingStory ? `Generating Story... ${Math.floor(generationProgress)}%` : "✦ Generate Story"}</span>
+              </button>
+            </div>
+            
+            {generatingStory && (
+              <div style={{ marginTop: 20, textAlign: "center" }}>
+                <div style={{ fontSize: 12, color: C.textDim, marginBottom: 8, fontStyle: "italic" }}>
+                  {generationProgress < 30 ? "Creating characters and plot..." : generationProgress < 70 ? "Drawing panels with AI..." : generationProgress < 95 ? "Finalizing high-quality art..." : "Almost ready!"}
+                </div>
+                <div style={{ width: "100%", height: 6, background: C.surface, borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ width: `${generationProgress}%`, height: "100%", background: C.gradient, transition: "width 0.5s ease" }} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", paddingTop: 62 }}>
         <div className={`sidebar ${mobileMenuOpen ? 'open' : ''}`}>

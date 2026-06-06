@@ -25,6 +25,8 @@ export const api = {
   generateStory: (data) => axios.post('/api/stories/generate', data, authHeaders()),
   generateArticle: (data) => axios.post('/api/stories/generate-article', data, authHeaders()),
   generateEpisode: (storyId, prompt) => axios.post('/api/stories/generate-episode', { storyId, prompt }, authHeaders()),
+  voteEpisode: (storyId, epNum, choiceIndex) => axios.post(`/api/stories/${storyId}/episode/${epNum}/vote`, { choiceIndex }, authHeaders()),
+  translateEpisode: (storyId, epNum, targetLanguage) => axios.post(`/api/stories/${storyId}/episode/${epNum}/translate`, { targetLanguage }, authHeaders()),
 
   // Admin
   getAdminStats: () => axios.get('/api/admin/stats', authHeaders()),
