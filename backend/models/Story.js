@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const StorySchema = new mongoose.Schema({
     title: { type: String, required: true },
     genre: String,
+  isAdult: { type: Boolean, default: true },
     coverIcon: String,
     coverBg: String,
     authorId: String,

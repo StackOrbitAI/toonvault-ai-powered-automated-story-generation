@@ -23,7 +23,7 @@ async function generateNextEpisode() {
         );
 
         // 2. Find specific story
-        const story = await Story.findById("6a22ee4035f9acdd5b7e3e1a");
+        const story = await Story.findOne({ title: "My Professor, My Heart" });
         if (!story) {
             console.error("Story 'My Professor, My Heart' not found");
             process.exit(1);

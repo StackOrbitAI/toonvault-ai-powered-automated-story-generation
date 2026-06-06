@@ -107,6 +107,27 @@ router.patch('/:id/status', auth, adminOnly, async (req, res) => {
     }
 });
 
+// Claim Daily ToonCoins
+router.post('/claim-daily', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const now = new Date();
+        if (user.lastDailyClaim) {
+            const timeDiff = now - user.lastDailyClaim;
+            const hoursDiff = timeDiff / (1000 * 60 * 60);
+            if (hoursDiff < 24) {
+                return res.status(400).json({ error: 'You have already claimed your daily reward. Try again later.' });
+            }
+        }
+        user.coins = (user.coins || 0) + 10;
+        user.lastDailyClaim = now;
+        await user.save();
+        res.json({ message: 'Successfully claimed 10 ToonCoins!', coins: user.coins });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Update User Plan
 router.post('/update-plan', auth, async (req, res) => {
     try {

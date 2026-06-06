@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const Story = require('../models/Story');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/adminOnly');
 const redis = require('../redisClient');
@@ -333,6 +334,11 @@ router.post('/generate-article', auth, async (req, res) => {
 router.post('/generate-episode', auth, async (req, res) => {
     const { storyId, prompt: userPrompt } = req.body;
     try {
+        const user = await User.findById(req.user.id);
+        if (user.coins < 10) {
+            return res.status(402).json({ error: "Insufficient ToonCoins. Generating an episode costs 10 coins." });
+        }
+
         const story = await Story.findById(storyId);
         if (!story) return res.status(404).json({ error: "Story not found" });
 
@@ -462,7 +468,10 @@ router.post('/generate-episode', auth, async (req, res) => {
         story.episodes.push(newEpisode);
         await story.save();
 
-        res.json({ message: "Next episode generated successfully!", episode: newEpisode });
+        user.coins -= 10;
+        await user.save();
+
+        res.json({ message: "Next episode generated successfully!", episode: newEpisode, coinsRemaining: user.coins });
     } catch (err) {
         console.error("Episode Gen Error:", err.message);
         res.status(500).json({ error: "Failed to generate next episode: " + err.message });
@@ -475,6 +484,11 @@ router.post('/:storyId/episode/:episodeNumber/vote', auth, async (req, res) => {
         const { storyId, episodeNumber } = req.params;
         const { choiceIndex } = req.body;
         
+        const user = await User.findById(req.user.id);
+        if (user.coins < 1) {
+            return res.status(402).json({ error: "Insufficient ToonCoins. Voting costs 1 coin." });
+        }
+
         const story = await Story.findById(storyId);
         if (!story) return res.status(404).json({ error: "Story not found" });
         
@@ -501,7 +515,10 @@ router.post('/:storyId/episode/:episodeNumber/vote', auth, async (req, res) => {
         // Prevent double voting for 24h
         await redis.setex(voteKey, 86400, "1");
         
-        res.json({ message: "Vote recorded successfully!", choices: episode.choices });
+        user.coins -= 1;
+        await user.save();
+
+        res.json({ message: "Vote recorded successfully", choices: episode.choices, coinsRemaining: user.coins });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

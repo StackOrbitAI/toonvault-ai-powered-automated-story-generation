@@ -298,7 +298,7 @@ export default function MantaReader() {
 
   const handleGenerateEpisode = async () => {
     setGeneratingEp(true);
-    setToast("Generating next episode... This may take a moment.");
+    setToast("Generating next episode... This costs 10 ToonCoins.");
     try {
       await api.generateEpisode(storyId, "");
       setToast("✨ Episode generated successfully!");
@@ -306,7 +306,11 @@ export default function MantaReader() {
         window.location.reload();
       }, 1500);
     } catch (e) {
-      setToast("Failed to generate episode.");
+      if (e.response?.status === 402) {
+        setToast("🪙 Insufficient ToonCoins! Generating costs 10 coins.");
+      } else {
+        setToast("Failed to generate episode.");
+      }
     } finally {
       setGeneratingEp(false);
     }
@@ -399,7 +403,7 @@ export default function MantaReader() {
     );
   }
 
-  const isMature = story.isAgeRestricted === true || story.genre?.toLowerCase() === 'mature';
+  const isMature = story.isAgeRestricted === true || story.isAdult === true || story.genre?.toLowerCase() === 'mature';
   const showMatureModal = isMature && !consentGiven;
 
   const hasNext = story.episodes && epNum < (1 + story.episodes.length);
@@ -420,11 +424,15 @@ export default function MantaReader() {
   const handleVote = async (index) => {
     try {
       const res = await api.voteEpisode(storyId, epNum, index);
-      setToast("✨ Vote recorded! " + res.data.message);
+      setToast("✨ Vote recorded! (-1 ToonCoin)");
       // Optimistically update choices
       setStory(prev => ({ ...prev, displayChoices: res.data.choices }));
     } catch (e) {
-      setToast(e.response?.data?.message || "Failed to vote. Maybe you already voted?");
+      if (e.response?.status === 402) {
+        setToast("🪙 Insufficient ToonCoins! Voting costs 1 coin.");
+      } else {
+        setToast(e.response?.data?.message || "Failed to vote. Maybe you already voted?");
+      }
     }
   };
 
@@ -666,8 +674,11 @@ export default function MantaReader() {
                     }}
                   >
                     {isMostPopular && totalVotes > 0 && <div style={{ position: 'absolute', top: 0, right: 0, padding: '6px 14px', background: COLORS.rose, color: 'white', fontSize: 10, fontWeight: 900, borderBottomLeftRadius: 16 }}>POPULAR</div>}
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: COLORS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>
-                      {String.fromCharCode(65 + idx)}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 12, background: COLORS.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900 }}>
+                        {String.fromCharCode(65 + idx)}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#F59E0B', fontWeight: 700, background: 'rgba(245,158,11,0.1)', padding: '4px 10px', borderRadius: 12 }}>1 🪙</div>
                     </div>
                     <div>
                       <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 6 }}>{choice.text}</div>

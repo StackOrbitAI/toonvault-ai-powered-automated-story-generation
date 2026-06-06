@@ -39,6 +39,23 @@ const C = {
 // ═══════════════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════════════
+const MAX_WIDTH = 1200;
+
+const getCoverImage = (s) => {
+  if (s.coverIcon && s.coverIcon.startsWith('http')) return s.coverIcon;
+  if (s.episodes && s.episodes.length > 0 && s.episodes[0].content) {
+    try {
+      const parsed = JSON.parse(s.episodes[0].content);
+      if (Array.isArray(parsed) && parsed[0]?.image) {
+        return <img src={parsed[0].image} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
+      }
+    } catch (e) {
+      // Ignore parse errors, fallback to coverIcon
+    }
+  }
+  return s.coverIcon || "📖";
+};
+
 const NAV_ITEMS = [
   { id: "public_home", icon: "🌐", label: "Public Homepage" },
   { id: "home", icon: "⬡", label: "Home" },
@@ -453,7 +470,7 @@ function Sidebar({ page, setPage, user = {}, navigate, onLinkClick }) {
 // ═══════════════════════════════════════════════════════
 // HOME PAGE
 // ═══════════════════════════════════════════════════════
-function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
+function HomePage({ setPage, setUser, user = {}, myStories = [], allStories = [] }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const publishingCount = (myStories || []).filter(s => s.status === "Live").length;
@@ -499,29 +516,29 @@ function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
                 boxShadow: `0 10px 30px ${C.plumGlow}`,
                 transition: "all 0.2s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = `0 15px 40px ${C.plumGlow}`; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 10px 30px ${C.plumGlow}`; }}
             >
-              <span style={{ fontSize: 20 }}>✨</span> Publish New Story
+              <span>✨</span> Create New Story
             </button>
-
-            {[
-              { label: "Continue Reading", icon: "▶", color: C.plum, action: () => setPage("reading") },
-              { label: "New Chapter", icon: "✍️", color: C.rose, action: () => setPage("stories") },
-              { label: "AI Studio", icon: "✦", color: C.cyan, action: () => setPage("ai") },
-            ].map(btn => (
-              <button key={btn.label} onClick={btn.action} style={{
-                padding: "12px 22px", borderRadius: 24,
-                background: btn.color + "15", border: `1px solid ${btn.color}40`,
-                color: btn.color, fontSize: 14, fontWeight: 700, cursor: "pointer",
-                display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s",
+            <button 
+              onClick={async () => {
+                try {
+                  const res = await api.client.post('/users/claim-daily');
+                  setUser(prev => ({...prev, coins: res.data.coins, lastDailyClaim: new Date()}));
+                  alert("🎉 Successfully claimed 10 ToonCoins!");
+                } catch (e) {
+                  alert(e.response?.data?.error || "Failed to claim reward");
+                }
               }}
-                onMouseEnter={e => e.currentTarget.style.background = btn.color + "25"}
-                onMouseLeave={e => e.currentTarget.style.background = btn.color + "15"}
-              >
-                <span>{btn.icon}</span> {btn.label}
-              </button>
-            ))}
+              style={{
+                padding: "12px 28px", borderRadius: 24,
+                background: "rgba(255, 215, 0, 0.15)", border: `1px solid rgba(255, 215, 0, 0.4)`,
+                color: "#F59E0B", fontSize: 15, fontWeight: 800, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 10,
+                transition: "all 0.2s",
+              }}
+            >
+              <span>🪙</span> Claim Daily Reward
+            </button>
           </div>
         </div>
       </div>
@@ -604,18 +621,18 @@ function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
             </div>
           </GlassCard>
 
-          {/* Top Stories */}
           <GlassCard style={{ padding: "22px 24px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>Top Performing Stories</div>
-              <button onClick={() => setPage("stories")} style={{ fontSize: 12, color: C.plumLight, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View all →</button>
+              <button onClick={() => setPage("reading")} style={{ fontSize: 12, color: C.plumLight, background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>View all →</button>
             </div>
-            {( (myStories && myStories.length > 0) ? myStories : STORIES_DATA).slice(0, 4).map((s, i) => (
+            {(allStories && allStories.length > 0 ? allStories : []).sort((a,b) => (b.views||0) - (a.views||0)).slice(0, 4).map((s, i) => (
               <div key={s._id || s.id} style={{
                 display: "flex", alignItems: "center", gap: 14,
                 padding: "12px 0",
                 borderBottom: i < 3 ? `1px solid ${C.cardBorder}` : "none",
-              }}>
+                cursor: "pointer"
+              }} onClick={() => window.location.href = `/manta/${s._id}`}>
                 <div style={{ fontSize: 22, width: 32, textAlign: "center" }}>{["🥇", "🥈", "🥉", "4"][i]}</div>
                 <div style={{
                   width: 40, height: 50, borderRadius: 8, flexShrink: 0,
@@ -665,27 +682,26 @@ function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
             </div>
           </GlassCard>
 
-          {/* Continue Reading */}
+          {/* Discover Recent Stories */}
           <GlassCard style={{ padding: "20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Continue Reading</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>Discover Stories</div>
               <button onClick={() => setPage("reading")} style={{ fontSize: 11, color: C.plumLight, background: "none", border: "none", cursor: "pointer" }}>See all →</button>
             </div>
-            {READING_LIST.slice(0, 3).map(s => (
-              <div key={s._id || s.id} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+            {(allStories || []).slice(0, 3).map(s => (
+              <div key={s._id || s.id} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, cursor: "pointer" }} onClick={() => window.location.href = `/manta/${s._id}`}>
                 <div style={{
                   width: 36, height: 46, borderRadius: 8, flexShrink: 0,
-                  background: s.bg, display: "flex", alignItems: "center",
+                  background: s.bg || C.plum, display: "flex", alignItems: "center",
                   justifyContent: "center", fontSize: 18, overflow: "hidden"
                 }}>
-                  {s.panels && s.panels[0] ? <img src={s.panels[0]} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (s.cover || "📖")}
+                  {getCoverImage(s)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.title}</div>
-                  <div style={{ fontSize: 10, color: C.textDim, marginBottom: 5 }}>{s.chapter}</div>
-                  <ProgressBar value={s.progress} max={100} color={C.plumLight} thin />
+                  <div style={{ fontSize: 10, color: C.textDim, marginBottom: 5 }}>{s.genre}</div>
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: C.plumLight }}>{s.progress}%</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.plumLight }}>Read →</div>
               </div>
             ))}
           </GlassCard>
@@ -956,60 +972,56 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
   );
 }
 // ═══════════════════════════════════════════════════════
-// READING HISTORY PAGE
 // ═══════════════════════════════════════════════════════
-function ReadingPage() {
+// PUBLIC LIBRARY / DISCOVER PAGE
+// ═══════════════════════════════════════════════════════
+function ReadingPage({ allStories = [] }) {
   const [tab, setTab] = useState("In Progress");
 
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>Reading List</h2>
-        <p style={{ fontSize: 13, color: C.textDim, margin: 0 }}>Track your reading journey</p>
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: "0 0 4px" }}>Public Library</h2>
+        <p style={{ fontSize: 13, color: C.textDim, margin: 0 }}>Discover stories created by the community</p>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {["In Progress", "Completed", "Bookmarked", "Following"].map(t => (
+        {["All Stories", "Top Rated", "Newest"].map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             padding: "7px 18px", borderRadius: 20,
-            background: tab === t ? C.plum : "transparent",
-            color: tab === t ? "white" : C.textMuted,
-            fontSize: 13, fontWeight: tab === t ? 700 : 400,
-            border: `1px solid ${tab === t ? C.plum : C.glassBorder}`,
+            background: tab === t || (t==="All Stories" && tab === "In Progress") ? C.plum : "transparent",
+            color: tab === t || (t==="All Stories" && tab === "In Progress") ? "white" : C.textMuted,
+            fontSize: 13, fontWeight: tab === t || (t==="All Stories" && tab === "In Progress") ? 700 : 400,
+            border: `1px solid ${tab === t || (t==="All Stories" && tab === "In Progress") ? C.plum : C.glassBorder}`,
             cursor: "pointer", transition: "all 0.18s",
           }}>{t}</button>
         ))}
       </div>
 
       <div className="grid-responsive">
-        {READING_LIST.map(s => (
+        {allStories.map(s => (
           <GlassCard key={s._id || s.id} glow style={{ padding: "16px 20px", display: "flex", gap: 16, alignItems: "center" }}>
             <div style={{
               width: 52, height: 66, borderRadius: 10, flexShrink: 0,
-              background: s.bg, display: "flex", alignItems: "center",
+              background: s.bg || C.plum, display: "flex", alignItems: "center",
               justifyContent: "center", fontSize: 26, overflow: "hidden",
               boxShadow: `0 4px 16px rgba(0,0,0,0.3)`,
             }}>
-              {s.panels && s.panels[0] ? <img src={s.panels[0]} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : (s.cover || "📖")}
+              {getCoverImage(s)}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 3 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{s.title}</div>
-                <span style={{ fontSize: 12, fontWeight: 700, color: C.plumLight, marginLeft: 8 }}>{s.progress}%</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: C.plumLight, marginLeft: 8 }}>By {s.authorName || 'Creator'}</span>
               </div>
-              <div style={{ fontSize: 11, color: C.textDim, marginBottom: 8 }}>{s.genre} · {s.chapter}</div>
-              <ProgressBar value={s.progress} max={100} color={s.progress > 80 ? C.green : C.plumLight} />
+              <div style={{ fontSize: 11, color: C.textDim, marginBottom: 8 }}>{s.genre} · {s.episodes?.length || 0} Episodes</div>
+              <ProgressBar value={100} max={100} color={C.plumLight} thin />
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                <button style={{
+                <button onClick={() => window.location.href = `/manta/${s._id}`} style={{
                   flex: 1, padding: "7px 10px", borderRadius: 10,
                   background: C.plum + "22", border: `1px solid ${C.plum}50`,
                   color: C.plumLight, fontSize: 11, fontWeight: 600, cursor: "pointer",
-                }}>▶ Continue</button>
-                <button style={{
-                  padding: "7px 10px", borderRadius: 10,
-                  background: C.glass, border: `1px solid ${C.glassBorder}`,
-                  color: C.textMuted, fontSize: 11, cursor: "pointer",
-                }}>🔖</button>
+                }}>▶ Read Now</button>
               </div>
             </div>
           </GlassCard>
@@ -1022,15 +1034,19 @@ function ReadingPage() {
 // ═══════════════════════════════════════════════════════
 // AI STUDIO PAGE
 // ═══════════════════════════════════════════════════════
-function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
+function AIStudioPage({ user = {}, setUser, refreshStories, initialPrompt, navigate }) {
   const [topic, setTopic] = useState(initialPrompt || "");
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
-  const handleGenerate = async () => {
-    if (!topic.trim()) return;
+  const handleGenerateStory = async () => {
+    // Check if enough coins
+    if (user.coins < 10) {
+      alert("Insufficient ToonCoins! Generating an episode costs 10 ToonCoins.");
+      return;
+    }
     setGenerating(true); setResult(null); setError("");
     try {
       const res = await api.generateStory({ 
@@ -1080,7 +1096,7 @@ function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
           />
           {error && <div style={{ marginTop: 10, padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#EF4444", fontSize: 12 }}>{error}</div>}
           <button
-            onClick={handleGenerate}
+            onClick={handleGenerateStory}
             disabled={generating || !topic.trim()}
             style={{
               width: "100%", marginTop: 14, padding: "12px",
@@ -1744,10 +1760,10 @@ export default function ToonVaultUserDashboard() {
   };
 
   const PAGES = {
-    home: <HomePage setPage={setPage} user={user} myStories={myStories} allStories={allStories} />,
+    home: <HomePage setPage={setPage} setUser={setUser} user={user} myStories={myStories} allStories={allStories} />,
     stories: <MyStoriesPage user={user} myStories={myStories} refreshStories={refreshStories} navigate={navigate} />,
     reading: <ReadingPage allStories={allStories} />,
-    ai: <AIStudioPage user={user} refreshStories={refreshStories} initialPrompt={initialPrompt} navigate={navigate} />,
+    ai: <AIStudioPage user={user} setUser={setUser} refreshStories={refreshStories} initialPrompt={initialPrompt} navigate={navigate} />,
     analytics: <AnalyticsPage myStories={myStories} />,
     wallet: <WalletPage user={user} />,
     settings: <SettingsPage user={user} setUser={setUser} />,

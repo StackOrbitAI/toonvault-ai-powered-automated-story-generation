@@ -400,8 +400,12 @@ export default function StoryPage() {
   );
 
   const handleSelectEpisode = (ep) => {
-    // Navigate to the professional MantaReader with episode number
-    navigate(`/manta/${id}?ep=${ep.number || 1}`);
+    if (story.isAgeRestricted || story.isAdult) {
+      setPendingChoice({ type: 'EPISODE', episode: ep });
+      setShowAgeGate(true);
+    } else {
+      navigate(`/manta/${id}?ep=${ep.number || 1}`);
+    }
   };
 
   const triggerToast = (msg) => {
@@ -448,7 +452,19 @@ export default function StoryPage() {
       
       {/* Dynamic Modals */}
       <AnimatePresence>
-        {showAgeGate && <AgeGateModal rating="18+" onConsent={() => { setShowAgeGate(false); if(pendingChoice) executeChoice(pendingChoice); }} onDecline={() => setShowAgeGate(false)} />}
+        {showAgeGate && <AgeGateModal rating="18+" onConsent={() => { 
+          setShowAgeGate(false); 
+          if(pendingChoice?.type === 'EPISODE') {
+              navigate(`/manta/${id}?ep=${pendingChoice.episode.number || 1}`);
+          } else if(pendingChoice) {
+              executeChoice(pendingChoice); 
+          }
+        }} onDecline={() => {
+          setShowAgeGate(false);
+          if (pendingChoice?.type === 'EPISODE') {
+              navigate('/browse');
+          }
+        }} />}
         {showWriteModal && <WriteModal onClose={() => setShowWriteModal(false)} onSubmit={(txt) => { setShowWriteModal(false); triggerToast("Plot twist submitted!"); }} />}
       </AnimatePresence>
 
