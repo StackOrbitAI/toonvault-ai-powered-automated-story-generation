@@ -23,6 +23,7 @@ export const api = {
 
   // AI Generation
   generateStory: (data) => axios.post('/api/stories/generate', data, authHeaders()),
+  generateTitles: (data) => axios.post('/api/stories/generate-titles', data, authHeaders()),
   generateArticle: (data) => axios.post('/api/stories/generate-article', data, authHeaders()),
   generateEpisode: (storyId, prompt) => axios.post('/api/stories/generate-episode', { storyId, prompt }, authHeaders()),
   voteEpisode: (storyId, epNum, choiceIndex) => axios.post(`/api/stories/${storyId}/episode/${epNum}/vote`, { choiceIndex }, authHeaders()),

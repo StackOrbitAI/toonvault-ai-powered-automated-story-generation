@@ -957,11 +957,15 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
                   <button onClick={() => navigate(`/manta/${s._id}`)} style={{ flex: 3, padding: "12px", borderRadius: 12, background: C.gradient, border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
                     onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 20px ${C.plumGlow}`; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
-                  >📖 Open & Manage Episodes</button>
+                  >📖 Open & Manage</button>
+                  <button onClick={() => handleAddEpisode(s)} style={{ flex: 2, padding: "12px", borderRadius: 12, background: C.glass, border: `1px solid ${C.plum}`, color: C.plumLight, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = C.plum+"20"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = C.glass; }}
+                  >➕ Next Ep</button>
                   <button onClick={() => handleDelete(s._id)} disabled={deleting === s._id} style={{ flex: 1, padding: "12px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#EF4444", fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.2)"}
                     onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
-                  >{deleting===s._id ? "..." : "🗑 Delete"}</button>
+                  >{deleting===s._id ? "..." : "🗑"}</button>
                 </div>
               </div>
             </GlassCard>
@@ -1037,6 +1041,7 @@ function ReadingPage({ allStories = [] }) {
 function AIStudioPage({ user = {}, setUser, refreshStories, initialPrompt, navigate }) {
   const [topic, setTopic] = useState(initialPrompt || "");
   const [prompt, setPrompt] = useState("");
+  const [status, setStatus] = useState("draft");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -1054,7 +1059,7 @@ function AIStudioPage({ user = {}, setUser, refreshStories, initialPrompt, navig
         prompt, 
         images: 5, 
         category: "Story", 
-        status: "draft" 
+        status: status 
       });
       setResult(res.data.story);
       if (refreshStories) refreshStories();
@@ -1092,8 +1097,13 @@ function AIStudioPage({ user = {}, setUser, refreshStories, initialPrompt, navig
               background: C.bg, border: `1px solid ${C.cardBorder}`,
               color: C.text, fontSize: 13, resize: "none", outline: "none",
               fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box",
+              marginBottom: 12
             }}
           />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setStatus('published')} style={{ flex: 1, padding: "10px", borderRadius: 10, background: status === 'published' ? 'rgba(16,185,129,0.1)' : C.bg, border: `1px solid ${status === 'published' ? '#10B981' : C.cardBorder}`, color: status === 'published' ? '#10B981' : C.textDim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Live / Publish</button>
+            <button onClick={() => setStatus('draft')} style={{ flex: 1, padding: "10px", borderRadius: 10, background: status === 'draft' ? 'rgba(245,158,11,0.1)' : C.bg, border: `1px solid ${status === 'draft' ? '#F59E0B' : C.cardBorder}`, color: status === 'draft' ? '#F59E0B' : C.textDim, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Save as Draft</button>
+          </div>
           {error && <div style={{ marginTop: 10, padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#EF4444", fontSize: 12 }}>{error}</div>}
           <button
             onClick={handleGenerateStory}
@@ -1138,7 +1148,15 @@ function AIStudioPage({ user = {}, setUser, refreshStories, initialPrompt, navig
             <div>
               <div style={{ background: C.bg, border: `1px solid ${C.cardBorder}`, borderRadius: 12, padding: 16, marginBottom: 14, maxHeight: 220, overflowY: "auto" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.plumLight, marginBottom: 8 }}>✓ {result?.title || "Story Generated"}</div>
-                <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{result?.description || result?.content || "Story generated and saved!"}</div>
+                <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.7, whiteSpace: "pre-wrap", marginBottom: result?.status === 'Live' ? 12 : 0 }}>{result?.description || result?.content || "Story generated and saved!"}</div>
+                {result?.status === 'Live' && (
+                  <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.cardBorder}`, wordBreak: 'break-all' }}>
+                    <span style={{ fontSize: 11, color: C.textDim, display: 'block', marginBottom: 4 }}>Public URL:</span>
+                    <a href={`/story/${result._id}`} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: C.plumLight, fontWeight: 700, textDecoration: 'none' }}>
+                      https://toonvault.com/story/{result._id}
+                    </a>
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => { setResult(null); setTopic(""); setPrompt(""); }} style={{ flex: 1, padding: "9px", borderRadius: 10, background: C.glass, border: `1px solid ${C.glassBorder}`, color: C.textMuted, fontSize: 12, cursor: "pointer" }}>↺ New Story</button>

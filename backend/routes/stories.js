@@ -295,6 +295,30 @@ router.post('/generate', auth, async (req, res) => {
     }
 });
 
+// AI Generation Route for Titles (Suggestions)
+router.post('/generate-titles', auth, async (req, res) => {
+    const { prompt, genre } = req.body;
+    try {
+        const mistralResp = await axios.post('https://api.mistral.ai/v1/chat/completions', {
+            model: "mistral-small-latest",
+            messages: [{
+                role: "system",
+                content: `You are an expert story title generator for webtoons and comics. Generate exactly 3 catchy, engaging titles based on the user's prompt. Output MUST be a JSON object with a 'titles' array containing 3 strings.`
+            }, {
+                role: "user",
+                content: `Prompt: ${prompt || "A hero's journey"}\nGenre: ${genre || "Fantasy"}`
+            }],
+            response_format: { type: "json_object" }
+        }, { headers: { 'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}` } });
+
+        const aiOutput = JSON.parse(mistralResp.data.choices[0].message.content);
+        res.json({ titles: aiOutput.titles || [] });
+    } catch (err) {
+        console.error("Title Gen Error:", err.message);
+        res.status(500).json({ error: "Failed to generate titles" });
+    }
+});
+
 // AI Generation Route for Articles
 router.post('/generate-article', auth, async (req, res) => {
     const { topic, tone, genre, length } = req.body;

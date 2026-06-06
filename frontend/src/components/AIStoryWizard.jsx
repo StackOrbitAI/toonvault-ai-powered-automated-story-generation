@@ -36,11 +36,14 @@ export default function AIStoryWizard({ isOpen, onClose, onFinish }) {
   const [progress, setProgress] = useState(0);
   const [statusMsg, setStatusMsg] = useState("");
   const [formData, setFormData] = useState({
+    title: '',
     prompt: '',
     genre: 'fantasy',
     style: 'manta',
-    isPublic: true
+    status: 'published'
   });
+  const [suggestingTitles, setSuggestingTitles] = useState(false);
+  const [suggestedTitles, setSuggestedTitles] = useState([]);
   const [generatedStory, setGeneratedStory] = useState(null);
 
   useEffect(() => {
@@ -80,9 +83,11 @@ export default function AIStoryWizard({ isOpen, onClose, onFinish }) {
 
     try {
       const res = await api.generateStory({
+        topic: formData.title,
         prompt: formData.prompt,
         genre: formData.genre,
-        style: formData.style
+        style: formData.style,
+        status: formData.status
       });
       clearInterval(interval);
       setProgress(100);
@@ -144,29 +149,70 @@ export default function AIStoryWizard({ isOpen, onClose, onFinish }) {
               </div>
               <p style={{ color: COLORS.textDim, marginBottom: 30 }}>Tell our AI what your story is about. A single sentence or a full paragraph—it's up to you.</p>
               
-              <textarea 
-                autoFocus
-                value={formData.prompt}
-                onChange={e => setFormData({...formData, prompt: e.target.value})}
-                placeholder="e.g. A young mage discovers a forbidden library hidden beneath a desert city..."
-                style={{
-                  width: '100%', height: 160, background: 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20,
-                  color: 'white', fontSize: 16, outline: 'none', resize: 'none',
-                  transition: 'border-color 0.3s'
-                }}
-                onFocus={e => e.target.style.borderColor = COLORS.plum}
-                onBlur={e => e.target.style.borderColor = COLORS.border}
-              />
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 12, color: COLORS.textDim, fontWeight: 700, letterSpacing: 1, display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>Story Title / Topic</label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <input
+                    value={formData.title}
+                    onChange={e => setFormData({...formData, title: e.target.value})}
+                    placeholder="e.g. The Queen's Betrayal"
+                    style={{
+                      flex: 1, background: 'rgba(255,255,255,0.03)', border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: '16px 20px',
+                      color: 'white', fontSize: 16, outline: 'none', transition: 'border-color 0.3s'
+                    }}
+                    onFocus={e => e.target.style.borderColor = COLORS.plum}
+                    onBlur={e => e.target.style.borderColor = COLORS.border}
+                  />
+                  <button 
+                    disabled={suggestingTitles || !formData.prompt.trim()}
+                    onClick={async () => {
+                      setSuggestingTitles(true);
+                      try {
+                        const res = await api.generateTitles({ prompt: formData.prompt, genre: formData.genre });
+                        setSuggestedTitles(res.data.titles);
+                      } catch(e) { alert("Failed to suggest titles"); }
+                      finally { setSuggestingTitles(false); }
+                    }}
+                    style={{ padding: '0 20px', borderRadius: 16, background: 'rgba(139,92,246,0.1)', color: COLORS.plum, border: `1px solid ${COLORS.plum}40`, cursor: formData.prompt.trim() ? 'pointer' : 'not-allowed', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}
+                  >
+                    {suggestingTitles ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} Suggest
+                  </button>
+                </div>
+                {suggestedTitles.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                    {suggestedTitles.map((t, idx) => (
+                      <button key={idx} onClick={() => { setFormData({...formData, title: t}); setSuggestedTitles([]); }} style={{ padding: '6px 12px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: COLORS.text, border: `1px solid ${COLORS.border}`, fontSize: 12, cursor: 'pointer' }}>{t}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 12, color: COLORS.textDim, fontWeight: 700, letterSpacing: 1, display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>Additional Details (Prompt)</label>
+                <textarea 
+                  autoFocus
+                  value={formData.prompt}
+                  onChange={e => setFormData({...formData, prompt: e.target.value})}
+                  placeholder="e.g. A young mage discovers a forbidden library hidden beneath a desert city..."
+                  style={{
+                    width: '100%', height: 120, background: 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20,
+                    color: 'white', fontSize: 16, outline: 'none', resize: 'none',
+                    transition: 'border-color 0.3s', boxSizing: 'border-box'
+                  }}
+                  onFocus={e => e.target.style.borderColor = COLORS.plum}
+                  onBlur={e => e.target.style.borderColor = COLORS.border}
+                />
+              </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 30 }}>
                 <button 
-                  disabled={!formData.prompt.trim()}
+                  disabled={!formData.prompt.trim() || !formData.title.trim()}
                   onClick={handleNext}
                   style={{
-                    padding: '14px 28px', borderRadius: 16, background: formData.prompt.trim() ? COLORS.gradient : 'rgba(255,255,255,0.05)',
-                    color: formData.prompt.trim() ? 'white' : COLORS.textDim, border: 'none', fontWeight: 800,
-                    display: 'flex', alignItems: 'center', gap: 10, cursor: formData.prompt.trim() ? 'pointer' : 'not-allowed'
+                    padding: '14px 28px', borderRadius: 16, background: (formData.prompt.trim() && formData.title.trim()) ? COLORS.gradient : 'rgba(255,255,255,0.05)',
+                    color: (formData.prompt.trim() && formData.title.trim()) ? 'white' : COLORS.textDim, border: 'none', fontWeight: 800,
+                    display: 'flex', alignItems: 'center', gap: 10, cursor: (formData.prompt.trim() && formData.title.trim()) ? 'pointer' : 'not-allowed'
                   }}
                 >
                   Next Step <ArrowRight size={18} />
@@ -238,6 +284,26 @@ export default function AIStoryWizard({ isOpen, onClose, onFinish }) {
                 ))}
               </div>
 
+              <div style={{ marginTop: 30, marginBottom: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12, color: COLORS.textDim, textTransform: 'uppercase', letterSpacing: 1 }}>Publish Status</div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div 
+                    onClick={() => setFormData({...formData, status: 'published'})}
+                    style={{ flex: 1, padding: 16, borderRadius: 16, background: formData.status === 'published' ? 'rgba(16,185,129,0.1)' : 'transparent', border: `1px solid ${formData.status === 'published' ? '#10B981' : COLORS.border}`, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}
+                  >
+                    <div style={{ fontWeight: 800, color: formData.status === 'published' ? '#10B981' : 'white', marginBottom: 4 }}>Live / Publish</div>
+                    <div style={{ fontSize: 12, color: COLORS.textDim }}>Visible to public</div>
+                  </div>
+                  <div 
+                    onClick={() => setFormData({...formData, status: 'draft'})}
+                    style={{ flex: 1, padding: 16, borderRadius: 16, background: formData.status === 'draft' ? 'rgba(245,158,11,0.1)' : 'transparent', border: `1px solid ${formData.status === 'draft' ? '#F59E0B' : COLORS.border}`, cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s' }}
+                  >
+                    <div style={{ fontWeight: 800, color: formData.status === 'draft' ? '#F59E0B' : 'white', marginBottom: 4 }}>Save as Draft</div>
+                    <div style={{ fontSize: 12, color: COLORS.textDim }}>Only visible to you</div>
+                  </div>
+                </div>
+              </div>
+
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 40 }}>
                 <button onClick={handleBack} style={{ padding: '14px 20px', borderRadius: 16, background: 'none', border: 'none', color: COLORS.textDim, fontWeight: 700, cursor: 'pointer' }}>Back</button>
                 <button onClick={startGeneration} style={{ 
@@ -283,7 +349,15 @@ export default function AIStoryWizard({ isOpen, onClose, onFinish }) {
                   <Check size={32} />
                 </div>
                 <h2 style={{ fontSize: 28, fontWeight: 900, marginBottom: 8 }}>Story Ready!</h2>
-                <p style={{ color: COLORS.textDim }}>Your AI-generated story is draft and ready for the world.</p>
+                <p style={{ color: COLORS.textDim }}>Your AI-generated story is {generatedStory.status === 'Live' ? 'live and ready for the world.' : 'saved as a draft.'}</p>
+                {generatedStory.status === 'Live' && (
+                  <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.05)', display: 'inline-flex', alignItems: 'center', padding: '8px 16px', borderRadius: 12, border: `1px solid ${COLORS.border}` }}>
+                    <span style={{ fontSize: 12, color: COLORS.textDim, marginRight: 8 }}>Public URL:</span>
+                    <a href={`/story/${generatedStory._id}`} target="_blank" rel="noreferrer" style={{ fontSize: 14, color: COLORS.plum, fontWeight: 700, textDecoration: 'none' }}>
+                      https://toonvault.com/story/{generatedStory._id}
+                    </a>
+                  </div>
+                )}
               </div>
 
               <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 24, border: `1px solid ${COLORS.border}`, padding: 24, marginBottom: 30 }}>
