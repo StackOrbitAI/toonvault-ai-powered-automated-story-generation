@@ -585,7 +585,7 @@ function ToonVaultHome() {
           .hero-divider { display: none !important; }
           .hero-title { font-size: 32px !important; letter-spacing: -1px !important; margin-bottom: 12px !important; }
           .hero-subtitle { font-size: 13px !important; margin-bottom: 20px !important; text-align: center !important; max-width: 100% !important; }
-          .hero-cover { width: 100% !important; height: 160px !important; border-radius: 12px !important; background-position: center top !important; }
+          .hero-cover { width: 160px !important; height: 240px !important; border-radius: 12px !important; background-position: center top !important; margin: 0 auto 12px !important; }
           .hero-cta-row { justify-content: center !important; }
           .hero-features { justify-content: center !important; gap: 10px !important; }
           .hero-choices { gap: 6px !important; }
@@ -607,9 +607,9 @@ function ToonVaultHome() {
           .hero-right { padding: 0 16px 20px !important; }
           .hero-title { font-size: 26px !important; }
           .hero-subtitle { font-size: 12px !important; }
-          .hero-cover { height: 140px !important; }
+          .hero-cover { width: 140px !important; height: 200px !important; margin: 0 auto 16px !important; }
           .hero-btn-primary, .hero-btn-secondary { width: 100% !important; justify-content: center !important; }
-          .hero-cta-row { flex-direction: column !important; gap: 8px !important; }
+          .hero-cta-row { flex-direction: column !important; gap: 8px !important; width: 100% !important; }
           .hero-features { display: none !important; } /* Hide feature pills on mobile to save space */
         }
 
