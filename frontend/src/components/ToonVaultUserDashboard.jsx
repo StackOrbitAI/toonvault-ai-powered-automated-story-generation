@@ -527,7 +527,7 @@ function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
       </div>
 
       {/* Stats Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+      <div className="grid-4" style={{ marginBottom: 24 }}>
         {[
           { icon: "👁", label: "Total Views", value: totalViews > 1000000 ? (totalViews/1000000).toFixed(1)+"M" : totalViews > 1000 ? (totalViews/1000).toFixed(1)+"K" : String(totalViews), color: C.plum, delta: (myStories || []).length + " stories total" },
           { icon: "📖", label: "My Stories", value: String((myStories || []).length), color: C.rose, delta: publishingCount + " live" },
@@ -547,7 +547,7 @@ function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
       </div>
 
       {/* Main Content Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 20 }}>
+      <div className="dashboard-grid">
         {/* Left: Chart + Recent */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* Views Chart */}
@@ -642,7 +642,7 @@ function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
           {/* Quick Actions */}
           <GlassCard style={{ padding: "20px" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 14 }}>Quick Actions</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div className="grid-2">
               {[
                 { icon: "✍️", label: "New Chapter", color: C.plum },
                 { icon: "✦", label: "AI Panel", color: C.rose },
@@ -693,7 +693,7 @@ function HomePage({ setPage, user = {}, myStories = [], allStories = [] }) {
           {/* Recent Achievements */}
           <GlassCard style={{ padding: "20px" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 14 }}>Achievements</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div className="grid-2">
               {ACHIEVEMENTS.slice(0, 4).map(a => (
                 <div key={a.label} style={{
                   padding: "12px", borderRadius: 12,
@@ -866,7 +866,7 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
       )}
 
       {/* Summary Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+      <div className="grid-4" style={{ marginBottom: 24 }}>
         {[
           { label: "Total Views", value: totalViews > 1000000 ? (totalViews/1e6).toFixed(1)+"M" : totalViews > 1000 ? (totalViews/1000).toFixed(1)+"K" : String(totalViews), icon: "👁", color: C.plum },
           { label: "Total Stories", value: String(myStories.length), icon: "📖", color: C.rose },
@@ -896,7 +896,7 @@ function MyStoriesPage({ myStories = [], refreshStories, navigate }) {
       </div>
 
       {/* Story Cards Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+      <div className="grid-responsive">
         {filtered.length === 0 && (
           <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "60px 0", color: C.textDim }}>
             <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.4 }}>📖</div>
@@ -981,7 +981,7 @@ function ReadingPage() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 14 }}>
+      <div className="grid-responsive">
         {READING_LIST.map(s => (
           <GlassCard key={s._id || s.id} glow style={{ padding: "16px 20px", display: "flex", gap: 16, alignItems: "center" }}>
             <div style={{
@@ -1057,7 +1057,7 @@ function AIStudioPage({ user = {}, refreshStories, initialPrompt, navigate }) {
       </div>
 
       {/* Generator UI */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="grid-2">
         <GlassCard style={{ padding: "24px" }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 16 }}>
             📖 Story Generator
@@ -1152,7 +1152,7 @@ function AnalyticsPage({ myStories = [] }) {
         <p style={{ fontSize: 13, color: C.textDim, margin: 0 }}>Deep insights into your story performance</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+      <div className="grid-4" style={{ marginBottom: 24 }}>
         {[
           { label: "Total Views", value: myStories.reduce((s,x)=>s+(x.views||0),0).toLocaleString(), delta: "+12%", icon: "👁", color: C.plum },
           { label: "Unique Readers", value: (myStories.reduce((s,x)=>s+(x.views||0),0)*0.7).toFixed(0).toLocaleString(), delta: "+8%", icon: "👥", color: C.cyan },
@@ -1168,7 +1168,7 @@ function AnalyticsPage({ myStories = [] }) {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20 }}>
+      <div className="dashboard-grid">
         <GlassCard style={{ padding: "24px" }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>Views by Story (Monthly)</div>
           {displayStories.length === 0 && <div style={{ color: C.textDim, fontSize: 13, textAlign: "center", padding: "40px 0" }}>No story data available yet.</div>}
@@ -1268,7 +1268,7 @@ function WalletPage() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 24 }}>
+      <div className="grid-3" style={{ marginBottom: 24 }}>
         {[
           { label: "Royalties", value: "$11,650", icon: "📖", color: C.plum },
           { label: "Coins Earned", value: "2,840 🪙", icon: "⭐", color: C.gold },
@@ -1492,7 +1492,7 @@ function PlansPage({ user, setUser }) {
         <p style={{ fontSize: 13, color: C.textDim, margin: 0 }}>Choose the perfect plan for your storytelling journey</p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginBottom: 40 }}>
+      <div className="grid-responsive" style={{ marginBottom: 40 }}>
         {PLANS.map(p => (
           <GlassCard key={p.name} onClick={() => handleSelectPlan(p)} style={{
             padding: "32px 24px", textAlign: "center", cursor: user.plan === p.name ? "default" : "pointer",

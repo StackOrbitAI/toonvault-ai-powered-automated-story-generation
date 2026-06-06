@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const path = require('path');
 const bcrypt = require('bcryptjs');
@@ -21,8 +22,24 @@ const io = new Server(server, { cors: { origin: '*' } });
 
 // Middleware
 app.use(cors({ origin: '*' }));
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(morgan('dev'));
+// Security Middleware
+app.use(helmet());
+
+// Rate Limiting (Global)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use(globalLimiter);
+
+// Specific Rate Limiting for Auth/Generation
+const strictLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50, // limit each IP to 50 login/generation requests per hour
+  message: 'Strict limit exceeded for this IP'
+});
+
 app.use(express.json());
 
 // Serving built frontend at root /
@@ -35,7 +52,7 @@ app.get('*', (req, res, next) => {
 });
 
 // Routes Integration
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', strictLimiter, require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/stories', require('./routes/stories'));
 app.use('/api/payments', require('./routes/payments'));
