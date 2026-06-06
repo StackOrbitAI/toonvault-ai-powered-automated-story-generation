@@ -352,6 +352,10 @@ export default function StoryPage() {
     axios.get(`/api/stories/${id}`)
       .then(res => {
         setStory(res.data);
+        if ((res.data.isAdult || res.data.isAgeRestricted) && !sessionStorage.getItem(`ageVerified_${id}`)) {
+          setPendingChoice({ type: 'PAGE_LOAD' });
+          setShowAgeGate(true);
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -454,16 +458,15 @@ export default function StoryPage() {
       <AnimatePresence>
         {showAgeGate && <AgeGateModal rating="18+" onConsent={() => { 
           setShowAgeGate(false); 
+          sessionStorage.setItem(`ageVerified_${id}`, 'true');
           if(pendingChoice?.type === 'EPISODE') {
               navigate(`/manta/${id}?ep=${pendingChoice.episode.number || 1}`);
-          } else if(pendingChoice) {
+          } else if(pendingChoice?.type !== 'PAGE_LOAD' && pendingChoice) {
               executeChoice(pendingChoice); 
           }
         }} onDecline={() => {
           setShowAgeGate(false);
-          if (pendingChoice?.type === 'EPISODE') {
-              navigate('/browse');
-          }
+          navigate('/browse');
         }} />}
         {showWriteModal && <WriteModal onClose={() => setShowWriteModal(false)} onSubmit={(txt) => { setShowWriteModal(false); triggerToast("Plot twist submitted!"); }} />}
       </AnimatePresence>

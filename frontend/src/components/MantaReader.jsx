@@ -583,10 +583,11 @@ export default function MantaReader() {
               background: `linear-gradient(135deg, ${COLORS.accent}, ${COLORS.rose})`, 
               border: 'none', color: 'white', padding: isMobile ? '6px 10px' : '6px 14px', borderRadius: 12, 
               cursor: 'pointer', fontSize: 13, fontWeight: 800, display: 'flex', 
-              alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(124,58,237,0.3)'
+              alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(124,58,237,0.3)',
+              whiteSpace: 'nowrap'
             }}
           >
-            <Play size={14} fill="currentColor" /> {!isMobile && "Watch as Reel"}
+            <Play size={14} fill="currentColor" /> <span className="desktop-only">Watch as Reel</span>
           </button>
           
           <button 
