@@ -62,6 +62,8 @@ const StorySchema = new mongoose.Schema({
         createdAt: { type: Date, default: Date.now }
     }],
     storyMapData: String,       // JSON string of story map nodes for Quest Map visualization
+    targetEpisodes: { type: Number, default: () => Math.floor(Math.random() * 11) + 10 }, // Random 10 to 20
+    isCompleted: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 });
 

@@ -12,9 +12,17 @@ require('dotenv').config();
 
 const User = require('./models/User');
 const Story = require('./models/Story');
+const { runDailyTasks } = require('./automation/daily_generator');
+const cron = require('node-cron');
 const Payment = require('./models/Payment');
 const Setting = require('./models/Setting');
 const redis = require('./redisClient');
+
+// Setup Daily Automation Job (Runs at 00:00 Every Day)
+cron.schedule('0 0 * * *', () => {
+    console.log('⏰ Triggering Daily Webtoon Generation Cron Job...');
+    runDailyTasks();
+});
 
 const app = express();
 const server = http.createServer(app);
