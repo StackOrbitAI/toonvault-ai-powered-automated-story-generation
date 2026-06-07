@@ -444,3 +444,26 @@ Built with ❤️ by [StackOrbitAI](https://github.com/StackOrbitAI)
 *The future of storytelling is automated, interactive, and AI-powered.*
 
 </div>
+
+## 🤝 Hire Our Team
+If you need help setting up workflows, automations, or custom solutions, our expert team is available for hire!
+
+- 💼 **Fiverr Profile:** [Hire us on Fiverr](https://www.fiverr.com/s/EgGm8pq)
+- 💼 **Upwork Profile:** [Hire us on Upwork](https://www.upwork.com/freelancers/~01b7bb1733953e942f)
+
+---
+
+## ☕ Support & Donations
+If you found our work helpful, consider supporting us!
+
+**💳 PayPal**
+- **Donation Link:** [paypal.me/khan1899](https://paypal.me/khan1899)
+
+**🔶 Binance Pay (100% Free / No Network Fees)**
+- **Pay ID:** 538454480
+- **Username:** Mohdakeel1899
+- **Name for Verification:** Mohd Akeel
+
+**🪙 Crypto Wallet (LTC / Litecoin)**
+- **LTC Address:** LaJGvzQJGmqfCFkP9cY1kjLp6hphECxWS2
+- **Network:** Litecoin (LTC) Network *(use this for lowest fees)*
